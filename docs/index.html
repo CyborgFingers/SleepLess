@@ -150,7 +150,7 @@
       <div class="card"><div class="icon">💻</div><h3>Keep awake with lid closed</h3><p>Sets the one flag that beats lid-close sleep on Apple Silicon (<code>SleepDisabled</code>) through a tiny root helper you approve once with your password.</p></div>
       <div class="card"><div class="icon">🛡️</div><h3>Safety cut-offs</h3><p>Only while charging. Pause when running hot. Low-battery cutoff (default 20 %). Automatically enable when you plug in, off when you unplug.</p></div>
       <div class="card"><div class="icon">⏱️</div><h3>Turn off after</h3><p>15 min to 4 hours with a live countdown, then everything turns off and normal sleep is back.</p></div>
-      <div class="card"><div class="icon">🐕</div><h3>Watchdog</h3><p>If the app quits, crashes or hangs, the helper restores normal sleep within about 90 s. Your Mac can never get stuck unable to sleep.</p></div>
+      <div class="card"><div class="icon">🐕</div><h3>Watchdog</h3><p>If the app crashes or hangs, the helper restores normal sleep within about two minutes; quitting normally restores it immediately. Your Mac can never get stuck unable to sleep.</p></div>
     </div>
   </div>
 </section>
@@ -167,7 +167,7 @@
       <div class="card">
         <h3>Lid closed</h3>
         <div class="step"><b>1</b><div>The app writes <code>1</code> or <code>0</code> to a request file and rewrites it every 30 s.</div></div>
-        <div class="step"><b>2</b><div>launchd runs the 70-line root helper on every write and every 30 s; it runs <code>pmset -a disablesleep 1|0</code> to match.</div></div>
+        <div class="step"><b>2</b><div>launchd runs the root helper — a short shell script — on every write and every 30 s; it runs <code>pmset -a disablesleep 1|0</code> to match.</div></div>
         <div class="step"><b>3</b><div>A request older than 90 s counts as <code>0</code> — the watchdog. The helper only undoes a <code>SleepDisabled</code> it set itself.</div></div>
       </div>
     </div>

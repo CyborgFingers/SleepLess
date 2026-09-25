@@ -41,11 +41,11 @@
 
 ### Lid closed
 
-Assertions do not stop a MacBook from sleeping when the lid closes. The only reliable override on Apple Silicon is `SleepDisabled` in `IOPMrootDomain`, which needs root. SleepLess therefore installs a **root launchd helper** — a 70-line shell script, [`sleepless-helper.sh`](sleepless-helper.sh) — with a single macOS admin prompt the first time you flip the switch:
+Assertions do not stop a MacBook from sleeping when the lid closes. The only reliable override on Apple Silicon is `SleepDisabled` in `IOPMrootDomain`, which needs root. SleepLess therefore installs a **root launchd helper** — a short shell script, [`sleepless-helper.sh`](sleepless-helper.sh) — with a single macOS admin prompt the first time you flip the switch:
 
 1. The app writes `1` or `0` to `/Library/Application Support/SleepLess/lid` and rewrites it every 30 s while lid-closed mode is on.
 2. launchd runs the helper on every write and every 30 s; the helper runs `pmset -a disablesleep 1` or `0` to match.
-3. **Watchdog:** a request file older than 90 s counts as `0`. If the app quits, crashes or hangs, normal sleep comes back within about a minute.
+3. **Watchdog:** a request file older than 90 s counts as `0`. If the app crashes or hangs, normal sleep comes back within about two minutes (90 s of staleness plus up to 30 s until the helper's next run). Quitting normally restores it immediately.
 4. The helper only ever undoes a `SleepDisabled` that it set itself (it keeps a marker file), so it will not fight `pmset` or another tool.
 
 The app also reads the live `SleepDisabled` flag, so the panel shows whether lid-closed mode is *really* active, and tells you if something else has disabled sleep.
@@ -54,7 +54,7 @@ The app also reads the live `SleepDisabled` flag, so the panel shows whether lid
 
 | | `caffeinate` | [Lidless](https://github.com/nghialuong/Lidless) | SleepLess |
 | --- | :---: | :---: | :---: |
-| Keep awake, lid open | ✓ | | ✓ |
+| Keep the screen on (lid open) | ✓ | | ✓ |
 | Dim the screen while idle | | | ✓ |
 | Keep awake, lid closed (`SleepDisabled`) | | ✓ | ✓ |
 | Safety cut-offs (charging / thermal / battery) | | ✓ | ✓ |
@@ -81,7 +81,7 @@ cd SleepLess
 
 - SleepLess lives in the **menu bar** — look for the rounded lid icon. There is no Dock icon.
 - It registers itself as a **login item** on first launch (macOS may show a "background items added" notification). Untick *Launch at login* in the panel if you would rather not.
-- The first time you turn on **Keep awake with lid closed**, macOS asks for your **administrator password once** to install the helper. You will not be asked again.
+- The first time you turn on **Keep awake with lid closed**, macOS asks for your **administrator password once** to install the helper. You will not be asked again (unless a future version updates the helper, which the app detects and re-installs with one prompt).
 - If you use **Bartender**, **Ice** or a similar menu-bar organiser, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there.
 
 ## Usage

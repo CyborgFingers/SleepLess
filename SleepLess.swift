@@ -72,7 +72,7 @@ struct Panel: View {
     }
 }
 
-/// Title + subtitle on the left, a switch on the right.
+/// Title + subtitle on the left, a switch pinned to the right edge.
 struct SwitchRow: View {
     let title: String
     var subtitle: String?
@@ -80,14 +80,17 @@ struct SwitchRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        Toggle(isOn: $isOn) {
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(bold ? .body.weight(.semibold) : .callout)
                 if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
             }
+            Spacer(minLength: 0)
+            Toggle(title, isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(bold ? .regular : .small)
         }
-        .toggleStyle(.switch)
-        .controlSize(bold ? .regular : .small)
     }
 }
 
