@@ -53,13 +53,16 @@ struct Panel: View {
             }
             .font(.callout)
             UpdateRows(updater: .shared)
-            HStack(spacing: 4) {
-                Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · by")
-                Link("CyborgFingers", destination: URL(string: "https://github.com/CyborgFingers")!)
-                    .help("github.com/CyborgFingers — source, releases and issues at github.com/CyborgFingers/SleepLess")
-                Text("· © 2026 · All rights reserved ·")
-                Link("Licence", destination: URL(string: "https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE")!)
-                    .help("The SleepLess licence agreement and privacy policy (SleepLess collects nothing).")
+            VStack(spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · by")
+                    Link("CyborgFingers", destination: URL(string: "https://github.com/CyborgFingers")!)
+                        .help("github.com/CyborgFingers — source, releases and issues at github.com/CyborgFingers/SleepLess")
+                    Text("·")
+                    Link("Licence", destination: URL(string: "https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE")!)
+                        .help("The SleepLess licence agreement and privacy policy (SleepLess collects nothing).")
+                }
+                Text("© 2026 Weta Technologies Limited · All rights reserved")
             }
             .font(.caption)
             .foregroundStyle(.secondary)

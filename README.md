@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg"><img alt="Download SleepLess for Mac" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?style=for-the-badge&label=Download%20for%20Mac&color=E2624F"></a>
+  <a href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg"><img alt="Download SleepLess for Mac" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?style=for-the-badge&label=Download%20for%20Mac&color=E2624F"></a>
   <br>
   <sub>macOS 13+ · Apple Silicon · free · made by <a href="https://github.com/CyborgFingers">CyborgFingers</a></sub>
 </p>
@@ -51,7 +51,7 @@
 
 ### Lid closed
 
-Assertions do not stop a MacBook from sleeping when the lid closes. The only reliable override on Apple Silicon is `SleepDisabled` in `IOPMrootDomain`, which needs root. SleepLess therefore installs a **root launchd helper** — a short shell script, [`sleepless-helper.sh`](sleepless-helper.sh) — from the panel's one-time setup card (or the *Set up…* button on this card): a single macOS authorization prompt, your password or Touch ID, that installs everything SleepLess will ever need as root. From then on nothing asks again — a new version's helper files are installed by the helper itself, and only when they carry a manifest signed with the CyborgFingers publisher key (see [Updates](#updates)):
+Assertions do not stop a MacBook from sleeping when the lid closes. The only reliable override on Apple Silicon is `SleepDisabled` in `IOPMrootDomain`, which needs root. SleepLess therefore installs a **root launchd helper** — a short shell script, [`sleepless-helper.sh`](sleepless-helper.sh). The Installer package does it under its own admin prompt, so the helper is there before the menu-bar icon first appears; a copy built from source gets the panel's one-time setup card (or the *Set up…* button on this card) instead — either way a single macOS authorization prompt, your password or Touch ID, installs everything SleepLess will ever need as root. From then on nothing asks again — a new version's helper files are installed by the helper itself, and only when they carry a manifest signed with the CyborgFingers publisher key (see [Updates](#updates)):
 
 1. The app writes `1` or `0` to `/Library/Application Support/SleepLess/lid` and rewrites it every 30 s while lid-closed mode is on.
 2. launchd runs the helper on every write and every 30 s; the helper runs `pmset -a disablesleep 1` or `0` to match.
@@ -76,7 +76,7 @@ The app also reads the live `SleepDisabled` flag, so the panel shows whether lid
 | Auto-off timer with countdown | `-t` seconds | ✓ | ✓ |
 | Watchdog restores sleep if the app dies | n/a | ✓ | ✓ |
 | Root helper | none | XPC daemon via `SMAppService` | shell script via launchd, one prompt (password or Touch ID), signed self-updates |
-| Download | | notarized DMG, auto-updates | DMG (not yet notarized) or build from source |
+| Download | | notarized DMG, auto-updates | Installer package (not yet notarized), signed in-app updates, or build from source |
 
 If you want a mature, feature-rich alternative with a notarized download, [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704) is the well-known one.
 
@@ -84,13 +84,10 @@ If you want a mature, feature-rich alternative with a notarized download, [Amphe
 
 ### Download (easiest)
 
-1. **[Download SleepLess.dmg](https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg)** — always the latest release ([all releases](https://github.com/CyborgFingers/SleepLess/releases)).
-2. Open it and drag **SleepLess** into **Applications**.
-3. Open SleepLess from Applications. It isn't notarized by Apple yet, so the first launch needs one extra step:
-   - **macOS 15 Sequoia or later:** macOS says it can't verify the app — click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to SleepLess.
-   - **macOS 13–14:** right-click (or ⌃-click) SleepLess in Applications, choose **Open**, then **Open** again.
+1. **[Download SleepLess.pkg](https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg)** — always the latest release ([all releases](https://github.com/CyborgFingers/SleepLess/releases)).
+2. Open it: **Continue**, **Agree** to the licence, **Install**. macOS asks for your password or Touch ID **once**: that puts SleepLess into Applications and sets up its helper, and SleepLess opens in your menu bar with lid-closed mode ready. Nothing asks again — not the app, and not later updates.
 
-   You only do this once. Requires an Apple Silicon Mac running macOS 13 or later.
+   The package and the app are Developer ID signed and notarized by Apple (the official builds are signed and notarized by Weta Technologies Limited — see [SECURITY.md](SECURITY.md) for how to check a download), so there is no Gatekeeper step and the app opens without a warning. Requires an Apple Silicon Mac running macOS 13 or later. Running the package again over an installed SleepLess (or a newer one) simply upgrades it; your settings are kept. (The 1.0 release was an unsigned drag-to-Applications DMG: if you still have that one, macOS 15 and later make you allow it under *System Settings → Privacy & Security → Open Anyway* — the package replaces it, and does not.)
 
 ### Build from source
 
@@ -102,13 +99,13 @@ cd SleepLess
 ./build.sh install   # builds build/SleepLess.app, copies it to /Applications and launches it
 ```
 
-`./build.sh` on its own just builds `build/SleepLess.app`. The app is ad-hoc signed; because you build it on your own Mac there is no download quarantine and no Gatekeeper prompt. `./make-dmg.sh` builds the drag-to-Applications installer (`build/SleepLess.dmg`) that is attached to each release.
+`./build.sh` on its own just builds `build/SleepLess.app`. The app is ad-hoc signed; because you build it on your own Mac there is no download quarantine and no Gatekeeper prompt. `./make-pkg.sh` builds the Installer package (`build/SleepLess.pkg`) that is attached to each release: the app, the licence pane, and pre/post-install scripts ([`pkg/`](pkg/)) that quit a running copy properly, hand the app to the logged-in user, install the helper for them and open the app.
 
 ## First run
 
 - SleepLess lives in the **menu bar** — look for the small screen-with-a-sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it (or right-click / ⌃-click) for the settings panel. The panel shows this tip once.
 - It registers itself as a **login item** on first launch (macOS may show a "background items added" notification). Untick *Launch at login* in the panel if you would rather not.
-- The panel opens with a **one-time setup** card for the helper behind lid-closed mode and the charging light: **Set up now** brings one macOS prompt — your password, or Touch ID on Macs that have it — and nothing asks again. **Later** leaves those two features off, each with its own *Set up…* button, until you are ready. (A *Reinstall helper…* link under *Safety* is there if the helper is ever removed.)
+- Installed with the package, the helper behind lid-closed mode and the charging light is already set up — the installer's prompt was the one. Built from source, the panel opens with a **one-time setup** card instead: **Set up now** brings one macOS prompt — your password, or Touch ID on Macs that have it — and nothing asks again; **Later** leaves those two features off, each with its own *Set up…* button, until you are ready. (A *Reinstall helper…* link under *Safety* is there if the helper is ever removed.)
 - If you use **Bartender**, **Ice** or a similar menu-bar organiser, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there.
 
 ## Usage
@@ -139,7 +136,7 @@ SleepLess checks GitHub for a newer release about 10 seconds after launch and th
 
 **Update Now** downloads `SleepLess.app.zip` from the release and checks its **Ed25519 signature** against the CyborgFingers publisher key built into the app — a download that doesn't verify is never unpacked. It then unpacks the zip beside the app, checks that the new bundle really is SleepLess at the advertised, newer version with a valid code signature, and hands over to a tiny script that waits for SleepLess to quit, swaps the two bundles with two renames (the old one is put back if anything fails) and relaunches. SleepLess quits normally, so brightness, the keyboard light and the charging light are handed back first. It all takes a couple of seconds. **Later** hides the card until the next check; **Skip** ignores that version.
 
-Your settings live outside the app (`~/Library/Preferences/io.github.cyborgfingers.sleepless.plist`), so they survive, and so does *Launch at login*. If the update changes the helper, the installed helper takes the new files by itself: they come with a manifest signed with the same publisher key, which the root-owned helper verifies (signature, every file's hash, no downgrade) before installing anything, so there is no new prompt. If SleepLess can't replace itself where it is — running from the DMG, say, or from a folder you can't write to — the card says so and offers the download page instead.
+Your settings live outside the app (`~/Library/Preferences/io.github.cyborgfingers.sleepless.plist`), so they survive, and so does *Launch at login*. If the update changes the helper, the installed helper takes the new files by itself: they come with a manifest signed with the same publisher key, which the root-owned helper verifies (signature, every file's hash, no downgrade) before installing anything, so there is no new prompt. If SleepLess can't replace itself where it is — in a folder you can't write to, say — the card says so and offers the download page instead (the package installs over the old version too).
 
 ## Safety
 
@@ -151,16 +148,16 @@ Your settings live outside the app (`~/Library/Preferences/io.github.cyborgfinge
 
 ## Uninstall
 
-Quit SleepLess, then remove the lid-closed helper (only there if you ever used lid-closed mode; this restores normal sleep):
+Quit SleepLess, then remove the helper (this restores normal sleep) and, if you installed with the package, its receipt:
 
 ```bash
 sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall
+sudo pkgutil --forget io.github.cyborgfingers.sleepless.pkg
 ```
 
-and move `/Applications/SleepLess.app` to the Trash. If you built from source, `./build.sh uninstall` does both. The helper's files are:
+and move `/Applications/SleepLess.app` to the Trash. If you built from source, `./build.sh uninstall` does all of it. The helper's files are:
 
-- `/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.lid.sh`
-- `/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.led`
+- `/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.lid.sh` (and `.led`, `.verify`, `.pub`, `.manifest` beside it)
 - `/Library/LaunchDaemons/io.github.cyborgfingers.sleepless.lid.plist`
 - `/Library/Application Support/SleepLess/`
 
@@ -202,9 +199,9 @@ SleepLess was inspired by [Lidless](https://github.com/nghialuong/Lidless) (MIT)
 
 ## License
 
-**SleepLess is copyright © 2026 [CyborgFingers](https://github.com/CyborgFingers). All rights reserved.**
+**SleepLess is copyright © 2026 Weta Technologies Limited. All rights reserved. Developed by Weta Technologies Limited · GitHub: [CyborgFingers](https://github.com/CyborgFingers).**
 
-SleepLess is **freeware**: you may download and use it free of charge on any Macs you own or control, for personal or business use. You may not modify, decompile, redistribute, sell or host it; please share the [official download](https://github.com/CyborgFingers/SleepLess/releases/latest) instead. The source is published so you can see exactly what SleepLess does. It is not open source, and viewing it gives no rights beyond the licence. The DMG asks you to accept the licence before it opens.
+SleepLess is **freeware**: you may download and use it free of charge on any Macs you own or control, for personal or business use. You may not modify, decompile, redistribute, sell or host it; please share the [official download](https://github.com/CyborgFingers/SleepLess/releases/latest) instead. The source is published so you can see exactly what SleepLess does. It is not open source, and viewing it gives no rights beyond the licence. The installer asks you to accept the licence before installing.
 
 - [Licence agreement](LICENSE) (governed by New Zealand law)
 - [Privacy policy](PRIVACY.md): SleepLess collects nothing

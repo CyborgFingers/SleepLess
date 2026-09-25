@@ -124,10 +124,10 @@
       <p class="tag">Keep your Mac awake — lid open or closed.</p>
       <p class="sub">Free menu-bar app for macOS 13+ on Apple Silicon.</p>
       <div class="btns">
-        <a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg">⬇︎ Download for Mac</a>
+        <a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg">⬇︎ Download for Mac</a>
         <a class="btn ghost" href="https://github.com/CyborgFingers/SleepLess">View on GitHub</a>
       </div>
-      <p class="dl-meta">Version 1.1.0 · DMG · macOS 13+ on Apple Silicon · <a href="#install">install help</a> · <a href="https://github.com/CyborgFingers/SleepLess/releases">all releases</a></p>
+      <p class="dl-meta">Version 1.1.0 · .pkg installer · macOS 13+ on Apple Silicon · <a href="#install">install help</a> · <a href="https://github.com/CyborgFingers/SleepLess/releases">all releases</a></p>
       <div class="badges"><span>By <a href="https://github.com/CyborgFingers">CyborgFingers</a></span><span>Swift &amp; SwiftUI</span><span>Freeware · all rights reserved</span><span>No analytics · signed updates</span></div>
     </div>
   </div>
@@ -196,20 +196,18 @@
 <section id="install">
   <div class="wrap">
     <h2>Download &amp; install</h2>
-    <p class="lead">Grab the installer, drag SleepLess into Applications, and you're done.</p>
-    <p><a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg">⬇︎ Download SleepLess.dmg</a></p>
+    <p class="lead">Download the installer and open it: Continue, Agree, Install — one password (or Touch ID), and SleepLess is in your menu bar with everything set up.</p>
+    <p><a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg">⬇︎ Download SleepLess.pkg</a></p>
     <ol class="muted">
-      <li>Open the DMG and drag <strong>SleepLess</strong> into <strong>Applications</strong>.</li>
-      <li>Open SleepLess from Applications. It isn't notarized by Apple yet, so the first launch needs one extra step:
-        <strong>macOS 15 or later</strong> — when macOS says it can't verify the app, click <em>Done</em>, open <em>System Settings → Privacy &amp; Security</em>, scroll down and click <em>Open Anyway</em>;
-        <strong>macOS 13–14</strong> — right-click SleepLess, choose <em>Open</em>, then <em>Open</em> again. Only the first time.</li>
+      <li>Open the package. It is Developer ID signed and notarized by Apple (the official builds are signed and notarized by Weta Technologies Limited), so there is no Gatekeeper step — and the app it installs opens without a warning.</li>
+      <li><strong>Continue</strong>, <strong>Agree</strong> to the licence, <strong>Install</strong>. macOS asks for your password or Touch ID once: SleepLess goes into Applications, its helper for lid-closed mode and the charging light is set up, and SleepLess opens in the menu bar. Nothing asks again — later updates arrive signed, from inside the app.</li>
     </ol>
     <h3 style="margin-top: 28px">Or build it from source</h3>
     <p class="muted">A few seconds with Xcode or the Command Line Tools (<code>xcode-select --install</code>):</p>
 <pre><code>git clone https://github.com/CyborgFingers/SleepLess.git
 cd SleepLess
 ./build.sh install</code></pre>
-    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. The panel offers a one-time setup for the helper behind lid-closed mode (your password or Touch ID, once); it then updates itself from signed files, and SleepLess itself checks GitHub for updates about once a day and installs them from the panel. To uninstall, quit SleepLess, run <code>sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall</code> (removes the helper and restores normal sleep) and move the app to the Trash — or <code>./build.sh uninstall</code> from a source checkout.</p>
+    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. Built from source, the panel offers a one-time setup for the helper behind lid-closed mode (your password or Touch ID, once — the package does this for you); the helper then updates itself from signed files, and SleepLess itself checks GitHub for updates about once a day and installs them from the panel. To uninstall, quit SleepLess, run <code>sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall</code> (removes the helper and restores normal sleep) and move the app to the Trash — or <code>./build.sh uninstall</code> from a source checkout.</p>
     <ul class="muted">
       <li><strong>Test it:</strong> <code>SleepLess.app/Contents/MacOS/SleepLess --selftest</code> checks brightness, assertions, battery and the click logic; <code>./test-helper.sh</code> checks the helper's watchdog with a fake <code>pmset</code>.</li>
       <li><strong>Privacy:</strong> no analytics; the only network activity is the daily update check (a plain request to GitHub, which you can turn off) and the update you start. Updates are Ed25519-signed and verified before anything is unpacked. The helper only ever runs <code>pmset</code>; any process running as your user could write the request file, but the worst case is a Mac that stays awake, and the watchdog still applies.</li>
@@ -220,7 +218,7 @@ cd SleepLess
 
 <footer>
   <div class="wrap">
-    <span>Made by <a href="https://github.com/CyborgFingers">CyborgFingers</a> · © 2026 · All rights reserved · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">Licence</a> · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/TRADEMARKS.md">Trademarks</a> · v1.1.0</span>
+    <span>Made by <a href="https://github.com/CyborgFingers">CyborgFingers</a> · © 2026 Weta Technologies Limited · All rights reserved · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">Licence</a> · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/TRADEMARKS.md">Trademarks</a> · v1.1.0</span>
     <span>Inspired by <a href="https://github.com/nghialuong/Lidless">Lidless</a> — independent implementation.</span>
     <span><a href="https://github.com/CyborgFingers/SleepLess">Source on GitHub</a></span>
   </div>

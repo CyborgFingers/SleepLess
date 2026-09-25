@@ -1,0 +1,7 @@
+SleepLess keeps your Mac awake — lid open or closed — from a small menu-bar app.
+
+This installer puts SleepLess into your Applications folder and sets up its helper: the small root job that lid-closed mode and the charging light need. macOS asks for your password (or Touch ID) once, at the Install step. Nothing will ask again — later versions update themselves, signed, from inside the app.
+
+SleepLess then opens in your menu bar. It runs on Apple Silicon Macs with macOS 13 or later. If SleepLess is already running, it is quit and replaced; your settings are kept.
+
+Developed by Weta Technologies Limited · GitHub: CyborgFingers.
