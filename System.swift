@@ -36,14 +36,42 @@ enum Display {
 
     /// A monitor is plugged in (lid shut + monitor = ordinary clamshell use).
     static var hasExternal: Bool { online.contains { CGDisplayIsBuiltin($0) == 0 } }
+}
 
-    /// Some screen is still lit.
-    static var anyAwake: Bool { online.contains { CGDisplayIsAsleep($0) == 0 } }
+// Built-in keyboard backlight via private CoreBrightness (what the keyboard-brightness keys use).
+enum KeyboardLight {
+    struct Level: Codable, Equatable {
+        var brightness: Float
+        var auto: Bool   // ambient-light adjustment
+    }
 
-    /// `pmset displaysleepnow`: screens off (the keyboard backlight goes with them), the Mac itself stays up.
-    static func sleepNow() {
-        do { try Process.run(URL(fileURLWithPath: "/usr/bin/pmset"), arguments: ["displaysleepnow"]) }
-        catch { NSLog("SleepLess: displaysleepnow failed: \(error)") }
+    private static let client: NSObject? = {
+        _ = dlopen("/System/Library/PrivateFrameworks/CoreBrightness.framework/CoreBrightness", RTLD_NOW)
+        return (NSClassFromString("KeyboardBrightnessClient") as? NSObject.Type)?.init()
+    }()
+    private static let keyboard: UInt64? = (client?.perform(NSSelectorFromString("copyKeyboardBacklightIDs"))?
+        .takeRetainedValue() as? [NSNumber])?.first?.uint64Value
+
+    private static func method<F>(_ name: String, _ type: F.Type) -> (NSObject, Selector, UInt64, F)? {
+        let selector = NSSelectorFromString(name)
+        guard let client, let keyboard, let m = class_getInstanceMethod(Swift.type(of: client), selector) else { return nil }
+        return (client, selector, keyboard, unsafeBitCast(method_getImplementation(m), to: F.self))
+    }
+
+    static func get() -> Level? {
+        guard let (c, s, k, brightness) = method("brightnessForKeyboard:", (@convention(c) (AnyObject, Selector, UInt64) -> Float).self),
+              let (_, s2, _, isAuto) = method("isAutoBrightnessEnabledForKeyboard:", (@convention(c) (AnyObject, Selector, UInt64) -> Bool).self)
+        else { return nil }
+        return Level(brightness: brightness(c, s, k), auto: isAuto(c, s2, k))
+    }
+
+    static func set(_ level: Level) {
+        guard let (c, s, k, setBrightness) = method("setBrightness:forKeyboard:", (@convention(c) (AnyObject, Selector, Float, UInt64) -> Bool).self),
+              let (_, s2, _, enableAuto) = method("enableAutoBrightness:forKeyboard:", (@convention(c) (AnyObject, Selector, Bool, UInt64) -> Void).self)
+        else { return NSLog("SleepLess: keyboard backlight unavailable") }
+        if !level.auto { enableAuto(c, s2, false, k) }   // off first, so ambient light can't pull it back up
+        if !setBrightness(c, s, level.brightness, k) { NSLog("SleepLess: keyboard backlight set failed") }
+        if level.auto { enableAuto(c, s2, true, k) }
     }
 }
 

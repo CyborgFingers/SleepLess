@@ -19,7 +19,7 @@
 
 - **Keep screen awake** (lid open) — holds the same power assertions as `caffeinate -di`: the screen never idle-dims or sleeps and the Mac never idle-sleeps. No admin rights needed.
 - **Screen when idle** — *Stay the same*, or *Dim* to a brightness you choose (0–100 %) after an idle delay (right away, 30 s, 1, 2, 5 or 10 min). Any keyboard or mouse input restores your original brightness instantly; so does turning it off or quitting. It never brightens a screen that is already below the target. The keyboard backlight is left alone.
-- **Keep awake with lid closed** — the only thing that beats lid-close sleep on Apple Silicon is the `SleepDisabled` flag (`sudo pmset -a disablesleep 1`). SleepLess sets it through a tiny root helper that you approve once with your password. Close the lid and the screen and keyboard backlight switch off while everything keeps running; open it and you're right where you left off.
+- **Keep awake with lid closed** — the only thing that beats lid-close sleep on Apple Silicon is the `SleepDisabled` flag (`sudo pmset -a disablesleep 1`). SleepLess sets it through a tiny root helper that you approve once with your password. Close the lid and the screen and keyboard backlight go dark while everything keeps running; open it and you're right where you left off — no unlock needed.
 - **Safety cut-offs** for lid-closed mode, tucked under a *Safety* disclosure with a one-line summary — *Only while charging*, *Pause when running hot* (thermal state serious/critical), a *Low-battery cutoff* slider (default 20 %, 0 = never) and *Turn on when charging* (follows plug/unplug).
 - **Turn off after** — never, 15 min, 30 min, 1, 2 or 4 hours, with a live countdown and progress bar. When the timer ends everything turns off.
 - **One click on, one click off** — a quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on; screen awake by default) or off. Press and hold the icon, or right-click it, for the settings panel.
@@ -49,7 +49,9 @@ Assertions do not stop a MacBook from sleeping when the lid closes. The only rel
 3. **Watchdog:** a request file older than 90 s counts as `0`. If the app crashes or hangs, normal sleep comes back within about two minutes (90 s of staleness plus up to 30 s until the helper's next run). Quitting normally restores it immediately.
 4. The helper only ever undoes a `SleepDisabled` that it set itself (it keeps a marker file), so it will not fight `pmset` or another tool.
 
-**Screen off, Mac on.** With the lid shut, SleepLess doesn't leave the display lit: it watches the lid sensor (`AppleClamshellState`), and once the lid is closed — with no external monitor connected — it lets go of its screen-awake hold and puts the display to sleep (`pmset displaysleepnow`), which turns the keyboard backlight off too. The Mac itself stays fully awake, so apps, downloads and agents keep running and your session stays logged in. Opening the lid wakes the screen; whether macOS asks for your password then is up to your *Lock Screen* setting, which SleepLess doesn't touch. With a monitor plugged in it's ordinary clamshell use, and SleepLess leaves the screens alone.
+**Dark screen, Mac on, no unlock.** With the lid shut, SleepLess doesn't leave the display lit: it watches the lid sensor (`AppleClamshellState`), and once the lid is closed — with no external monitor connected — it saves your screen and keyboard-backlight levels and turns both down to 0 (pausing the keyboard's ambient-light adjustment). It deliberately does *not* put the display to sleep: a sleeping display trips macOS's "require password" lock, a dark one doesn't. So the Mac stays fully awake, apps, downloads and agents keep running, and when you open the lid your levels come back and you're straight back in your session. With a monitor plugged in it's ordinary clamshell use, and SleepLess leaves the screens alone.
+
+> **Heads-up:** because the screen never "turns off", opening the lid doesn't ask for your password — the same as Lidless. If you want it locked, press ⌃⌘Q before you close the lid (it keeps running either way).
 
 The app also reads the live `SleepDisabled` flag, so the panel shows whether lid-closed mode is *really* active, and tells you if something else has disabled sleep.
 
@@ -96,7 +98,7 @@ A **quick click** on the menu-bar icon turns SleepLess on or off: on brings back
 | **Status header** | The big glyph and sentence say what SleepLess is doing right now; its switch is the same on/off as a click on the menu-bar icon. |
 | **Keep screen awake** | Screen stays on and the Mac will not idle-sleep while the lid is open. |
 | **When idle** — *Stay the same* / *Dim* (shown while the mode is on) | With *Dim*, pick the brightness (*Dim to*) and the idle delay (*After*). Brightness returns on the first key press or mouse move. |
-| **Keep awake with lid closed** | Sets `SleepDisabled` through the root helper. Closing the lid turns the screen and keyboard light off while the Mac keeps running. The subtitle shows the real state. |
+| **Keep awake with lid closed** | Sets `SleepDisabled` through the root helper. Closing the lid turns the screen and keyboard light down to off while the Mac keeps running, without locking. The subtitle shows the real state. |
 | **Safety** (disclosure, with a summary like *Stops at 20 % · Pauses when hot* and the battery level) | The rules below. |
 | **Only while charging** | Lid-closed mode turns off (and refuses to turn on) unless the charger is connected. Disables the battery cutoff, since it is no longer needed. |
 | **Pause when running hot** | Turns lid-closed mode off while the Mac's thermal state is serious or critical. |

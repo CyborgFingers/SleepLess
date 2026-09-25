@@ -46,6 +46,13 @@ private func selfTest() -> Never {
     precondition(types.isSuperset(of: ["PreventUserIdleDisplaySleep", "PreventUserIdleSystemSleep"]), "FAIL: assertions not registered: \(types)")
 
     precondition(Power.battery() != nil, "FAIL: can't read the battery")
+    if let keyboard = KeyboardLight.get() {   // keyboard backlight (lid-shut darkening): 0 and back
+        KeyboardLight.set(.init(brightness: 0, auto: false))
+        usleep(300_000)
+        let off = KeyboardLight.get()?.brightness ?? -1
+        KeyboardLight.set(keyboard)
+        precondition(off == 0, "FAIL: keyboard backlight set 0, read \(off)")
+    }
 
     // Menu-bar tap: on → off remembering the modes, off → those modes back; first tap = screen awake.
     let off = Keeper.tapPlan(screenOn: true, lidOn: true, remembered: TapRestore())
@@ -63,6 +70,6 @@ private func selfTest() -> Never {
     precondition(StatusItemController.gesture(.rightMouseDown, control: false) { true } == .settings, "FAIL: right-click should open settings")
     precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .settings, "FAIL: control-click should open settings")
 
-    print("PASS: brightness round-trip, display/system sleep assertions, battery, tap/hold logic (SleepDisabled now \(Power.sleepDisabled))")
+    print("PASS: brightness + keyboard-light round-trips, display/system sleep assertions, battery, tap/hold logic (SleepDisabled now \(Power.sleepDisabled))")
     exit(0)
 }

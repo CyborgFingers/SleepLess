@@ -20,6 +20,7 @@ import AppKit
     private var wantRise: CGFloat = 0, wantSun: CGFloat = 0
     private var from = Frame(), started = Date.distantPast   // the transition in flight starts from `from` at `started`
     private var screensAsleep = false
+    private var lidShut = false         // lid closed with the screen kept dark: nobody can see the menu bar
     private var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     private var timer: Timer?
 
@@ -53,6 +54,13 @@ import AppKit
         run()
     }
 
+    /// Pauses the animation while the lid is shut (the screen stays technically awake, so `screensAsleep` never fires).
+    func setLidShut(_ shut: Bool) {
+        guard shut != lidShut else { return }
+        lidShut = shut
+        run()
+    }
+
     private var transitioning: Bool { frame.rise != wantRise || frame.sun != wantSun }
 
     private func run() {
@@ -62,7 +70,7 @@ import AppKit
             render(Frame(rise: wantRise, sun: wantSun, phase: 0, shimmer: 0))
             return
         }
-        let moving = !screensAsleep && (transitioning || wantRise == 1)
+        let moving = !screensAsleep && !lidShut && (transitioning || wantRise == 1)
         let interval = 1 / (transitioning ? Self.fps : Self.idleFPS)
         if !moving || timer?.timeInterval != interval {
             timer?.invalidate()

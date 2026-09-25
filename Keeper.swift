@@ -23,6 +23,12 @@ struct TapRestore: Codable, Equatable {
     var lid = false
 }
 
+/// Screen and keyboard-light levels from before the lid was shut.
+struct LidDark: Codable, Equatable {
+    var screen: Float?
+    var keyboard: KeyboardLight.Level?
+}
+
 /// One reconcile loop: every second (and on every settings change) it makes the Mac match `s`.
 @MainActor final class Keeper: ObservableObject {
     @Published var s: Settings { didSet { if s != oldValue { save(); tick() } } }
@@ -37,8 +43,12 @@ struct TapRestore: Codable, Equatable {
     private var dimmedTo: Float?
     private var lastRequest: (on: Bool, at: Date)?
     private var lastOnAC: Bool?
-    private var lastDarken = Date.distantPast
     private var timer: Timer?
+    /// Levels to restore when the lid opens. Persisted, so a crash or quit with the lid shut can't leave the
+    /// screen at 0: the next tick (lid open) puts them back.
+    private var lidDark = UserDefaults.standard.data(forKey: "lidDark").flatMap { try? JSONDecoder().decode(LidDark.self, from: $0) } {
+        didSet { UserDefaults.standard.set(lidDark.flatMap { try? JSONEncoder().encode($0) }, forKey: "lidDark") }
+    }
     private static let heartbeat: TimeInterval = 30   // the helper treats > 90 s as a dead app
 
     init() {
@@ -135,11 +145,13 @@ struct TapRestore: Codable, Equatable {
         }
         if n != s { s = n; return }   // didSet re-runs tick with the settled settings
 
-        // Lid shut but the Mac kept up: screen + keyboard light off, everything keeps running. With a monitor
-        // plugged in it's ordinary clamshell use, so hands off.
-        let darkLid = Power.lidClosed && !Display.hasExternal
-        applyAwake(s.screenOn && !darkLid)
-        if darkLid { restoreBrightness(); darken(now) } else { applyDim() }
+        // Lid shut while the Mac is kept up: screen and keyboard light go to 0 but the display stays technically
+        // awake — a sleeping display trips the "require password" lock, a dark one doesn't, so opening the lid
+        // lands straight back in the session. With a monitor plugged in it's ordinary clamshell use: hands off.
+        let darkLid = Power.lidClosed && lidActive && !Display.hasExternal
+        applyAwake(s.screenOn || darkLid)
+        if darkLid { restoreBrightness(); goDark() } else { comeBack(); applyDim() }
+        icon.setLidShut(darkLid)
         applyLid(now)
         icon.show(screen: s.screenOn, lid: s.lidOn)
     }
@@ -172,12 +184,21 @@ struct TapRestore: Codable, Equatable {
         Brightness.set(target)
     }
 
-    /// Sleeps the screens while the lid is shut, re-checking every 10 s in case something lights them again.
-    /// Opening the lid wakes them as usual.
-    private func darken(_ now: Date) {
-        guard Display.anyAwake, now.timeIntervalSince(lastDarken) >= 10 else { return }
-        Display.sleepNow()
-        lastDarken = now
+    /// Saves the screen and keyboard-light levels once, then holds both at 0 — re-applied every tick because
+    /// ambient-light adjustment would otherwise creep them back up.
+    private func goDark() {
+        if lidDark == nil { lidDark = LidDark(screen: Brightness.get(), keyboard: KeyboardLight.get()) }
+        if (Brightness.get() ?? 0) > 0 { Brightness.set(0) }
+        if let keyboard = KeyboardLight.get(), keyboard.brightness > 0 || keyboard.auto {
+            KeyboardLight.set(.init(brightness: 0, auto: false))
+        }
+    }
+
+    private func comeBack() {
+        guard let saved = lidDark else { return }
+        if let screen = saved.screen { Brightness.set(screen) }
+        if let keyboard = saved.keyboard { KeyboardLight.set(keyboard) }
+        lidDark = nil
     }
 
     private func restoreBrightness() {
@@ -201,6 +222,7 @@ struct TapRestore: Codable, Equatable {
 
     private func shutdown() {
         restoreBrightness()
+        comeBack()
         if helperReady, s.lidOn { LidHelper.request(false) }   // settings stay on, so it resumes next launch
     }
 }
