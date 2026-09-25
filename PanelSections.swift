@@ -65,7 +65,7 @@ struct LidCard: View {
         case (true, true): return "Close the lid: screen goes dark, Mac keeps running"
         case (true, false): return "Starting…"
         case (false, true): return "Sleep is already disabled by something else (pmset? Lidless?)"
-        case (false, false): return keeper.helperReady ? "Lid closed: sleeps as usual" : "Set up once with your password"
+        case (false, false): return keeper.helperReady ? "Lid closed: sleeps as usual" : keeper.helperUpdating ? "Updating the helper…" : "Needs the one-time setup"
         }
     }
 
@@ -80,8 +80,18 @@ struct LidCard: View {
     var body: some View {
         ModeCard(title: "Keep awake with lid closed", subtitle: status,
                  symbol: "laptopcomputer", tint: .indigo,
-                 help: "Keeps the Mac running with the lid shut by setting SleepDisabled through a small root helper (one password prompt the first time). Closing the lid turns the screen and keyboard light down to off while everything keeps running; open it and you are right where you left off, without having to unlock. A watchdog restores normal sleep if SleepLess ever stops.",
+                 help: "Keeps the Mac running with the lid shut by setting SleepDisabled through a small root helper (set up once, with your password or Touch ID). Closing the lid turns the screen and keyboard light down to off while everything keeps running; open it and you are right where you left off, without having to unlock. A watchdog restores normal sleep if SleepLess ever stops.",
+                 disabled: !keeper.helperReady,
                  isOn: Binding(get: { keeper.s.lidOn }, set: { on in withAnimation(animation) { keeper.setLid(on) } })) {
+            if !keeper.helperReady, !keeper.helperUpdating {
+                HStack(spacing: 8) {
+                    Text("Needs SleepLess's helper — your password or Touch ID, once.").font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 6)
+                    Button("Set up…") { keeper.setUpHelper() }.controlSize(.small)
+                        .help("Installs the helper for lid-closed mode and the charging light. macOS asks for your password or Touch ID, this once.")
+                }
+            }
             Divider()
             Button {
                 withAnimation(animation) { safetyExpanded.toggle() }
@@ -150,6 +160,9 @@ struct SafetyRows: View {
                       subtitle: "Back to normal when you open the lid",
                       help: "While the lid is shut in lid-closed mode, the MagSafe connector's light turns off; opening the lid gives it back to macOS in the right colour.",
                       isOn: $keeper.lightOffWithLid)
+            Button("Reinstall helper…") { keeper.setUpHelper() }
+                .buttonStyle(.link).font(.caption)
+                .help("If lid-closed mode or the charging light ever stop working: reinstalls SleepLess's helper (one administrator prompt).")
         }
         .padding(.leading, 18)
         .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))

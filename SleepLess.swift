@@ -21,7 +21,9 @@ import IOKit.pwr_mgt
     private var statusItem: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if Updater.shared.testRun { return Updater.shared.start() }   // --update-test: only the updater, on a copy of the app
         statusItem = StatusItemController(keeper: Keeper())
+        Updater.shared.start()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
@@ -70,6 +72,8 @@ private func selfTest() -> Never {
     precondition(StatusItemController.gesture(.rightMouseDown, control: false) { true } == .settings, "FAIL: right-click should open settings")
     precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .settings, "FAIL: control-click should open settings")
 
-    print("PASS: brightness + keyboard-light round-trips, display/system sleep assertions, battery, tap/hold logic (SleepDisabled now \(Power.sleepDisabled))")
+    Updater.selfTest()   // versions, the release feed, signatures, the swap script on a fake bundle
+
+    print("PASS: brightness + keyboard-light round-trips, display/system sleep assertions, battery, tap/hold logic, updater (SleepDisabled now \(Power.sleepDisabled))")
     exit(0)
 }

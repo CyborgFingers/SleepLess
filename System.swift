@@ -143,14 +143,13 @@ enum LidHelper {
             && files.isWritableFile(atPath: lightRequestPath)
     }
 
-    /// One admin prompt. Returns an error message, or nil on success.
-    static func install() -> String? {
-        let quote = { (s: String) in s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") }
-        let script = "do shell script \"/bin/sh \" & quoted form of \"\(quote(bundledPath))\" & \" install \" & quoted form of \"\(quote(NSUserName()))\" with administrator privileges"
-        var error: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&error)
-        if let error { return error[NSAppleScript.errorMessage] as? String ?? "Helper install failed." }
-        return isReady ? nil : "Helper install didn't complete."
+    /// Some version of the helper is installed (so a signed self-update is possible when it isn't this one).
+    static var isInstalled: Bool { FileManager.default.fileExists(atPath: installedPath) }
+
+    /// The one admin prompt (password or Touch ID): installs everything SleepLess ever needs as root.
+    static func install() -> Admin.Outcome {
+        let outcome = Admin.run(bundledPath, ["install", NSUserName()], prompt: "SleepLess needs to install its helper for lid-closed mode and the charging light. This is the only time it will ask.")
+        return outcome == .done && !isReady ? .failed("The helper didn't install.") : outcome
     }
 
     static func request(_ on: Bool) {

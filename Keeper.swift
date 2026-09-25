@@ -36,6 +36,10 @@ struct LidDark: Codable, Equatable {
     @Published private(set) var lidActive = false   // SleepDisabled is really set
     @Published var note: String?                      // why something turned off / failed
     @Published private(set) var helperReady = LidHelper.isReady
+    @Published private(set) var helperUpdating = false   // the installed helper is taking this build's signed files (no prompt)
+    @Published var setupLater = false                     // "Later" on the setup card, for this launch
+    /// The helper is there but from another version: a signed update, or the setup card.
+    var helperStale: Bool { !helperReady && LidHelper.isInstalled }
     /// Turn the MagSafe charging light off while the lid is shut (own key: a new Settings field would reset settings).
     @Published var lightOffWithLid = UserDefaults.standard.object(forKey: "lightOffWithLid") as? Bool ?? true {
         didSet { UserDefaults.standard.set(lightOffWithLid, forKey: "lightOffWithLid"); tick() }
@@ -72,19 +76,35 @@ struct LidDark: Codable, Equatable {
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { self.shutdown() }
         }
+        if helperStale {   // an app update changed the helper: the installed one takes the signed files itself
+            helperUpdating = true
+            HelperUpdate.request(ready: { LidHelper.isReady }) { _ in
+                self.helperUpdating = false
+                self.helperReady = LidHelper.isReady
+                self.tick()
+            }
+        }
         tick()
     }
 
     // MARK: User actions that need more than a plain binding
 
+    /// The one administrator prompt (password or Touch ID): the setup card, a Set up… button, or Reinstall helper.
+    func setUpHelper() {
+        note = nil
+        switch LidHelper.install() {
+        case .done: helperReady = true
+        case .cancelled: break
+        case .failed(let why): note = why
+        }
+        tick()
+    }
+
     func setLid(_ on: Bool) {
         note = nil
         guard on else { s.lidOn = false; return }
         if let why = lidBlocker(Power.battery()) { note = "Can't keep awake with lid closed: \(why)."; return }
-        if !helperReady {
-            if let error = LidHelper.install() { note = error; return }
-            helperReady = true
-        }
+        guard helperReady else { note = "Lid-closed mode needs the one-time setup — click Set up."; return }
         s.lidOn = true
     }
 
@@ -140,7 +160,7 @@ struct LidDark: Codable, Equatable {
         if n.autoWhenCharging, onAC != lastOnAC { n.lidOn = onAC && helperReady }
         lastOnAC = onAC
         if n.lidOn, let why = lidBlocker(battery) { n.lidOn = false; note = "Lid-closed mode turned off: \(why)." }
-        if n.lidOn, !helperReady { n.lidOn = false; note = "Lid helper missing. Flip the lid switch to reinstall it." }
+        if n.lidOn, !helperReady, !helperUpdating { n.lidOn = false; note = "Lid-closed mode is off until its helper is set up — click Set up." }
 
         if !(n.screenOn || n.lidOn) || n.offAfter == 0 {
             n.offAt = nil

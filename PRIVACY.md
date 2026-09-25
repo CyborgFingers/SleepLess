@@ -5,8 +5,11 @@ _Last updated: 26 September 2026_
 SleepLess is made by [CyborgFingers](https://github.com/CyborgFingers). In short: **SleepLess collects nothing.**
 
 - No accounts, analytics, tracking, advertising or crash reporting.
-- No network connections of its own: SleepLess never sends anything anywhere. Links you click (for example to
-  GitHub) open in your web browser.
+- The only network activity is **checking for updates**: SleepLess asks GitHub for its latest release (a standard web
+  request, like visiting the releases page — no account, no identifiers, nothing about you or your Mac beyond what any
+  web request carries), and downloads an update only when you click **Update Now**. You can turn update checks off in
+  the app's settings. Updates are verified with CyborgFingers' signing key before they are installed.
+- Links you click (for example to GitHub) open in your web browser.
 - Nothing is sold, rented or shared — there is nothing to share.
 
 ## What stays on your Mac

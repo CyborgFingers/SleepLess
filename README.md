@@ -26,7 +26,7 @@
 
 - **Keep screen awake** (lid open) — holds the same power assertions as `caffeinate -di`: the screen never idle-dims or sleeps and the Mac never idle-sleeps. No admin rights needed.
 - **Screen when idle** — *Stay the same*, or *Dim* to a brightness you choose (0–100 %) after an idle delay (right away, 30 s, 1, 2, 5 or 10 min). Any keyboard or mouse input restores your original brightness instantly; so does turning it off or quitting. It never brightens a screen that is already below the target. The keyboard backlight is left alone.
-- **Keep awake with lid closed** — the only thing that beats lid-close sleep on Apple Silicon is the `SleepDisabled` flag (`sudo pmset -a disablesleep 1`). SleepLess sets it through a tiny root helper that you approve once with your password. Close the lid and the screen and keyboard backlight go dark while everything keeps running; open it and you're right where you left off — no unlock needed.
+- **Keep awake with lid closed** — the only thing that beats lid-close sleep on Apple Silicon is the `SleepDisabled` flag (`sudo pmset -a disablesleep 1`). SleepLess sets it through a tiny root helper that you set up once — one macOS prompt, your password or Touch ID — and that afterwards updates itself only from files signed by CyborgFingers, so nothing ever asks again. Close the lid and the screen and keyboard backlight go dark while everything keeps running; open it and you're right where you left off — no unlock needed.
 - **Charging light off when closed** — in lid-closed mode, closing the lid switches the MagSafe connector's light off (handy in a dark bedroom); opening it gives the light back to macOS in the right colour. On by default; a switch under *Safety* turns it off.
 - **Safety cut-offs** for lid-closed mode, tucked under a *Safety* disclosure with a one-line summary — *Only while charging*, *Pause when running hot* (thermal state serious/critical), a *Low-battery cutoff* slider (default 20 %, 0 = never) and *Turn on when charging* (follows plug/unplug).
 - **Turn off after** — never, 15 min, 30 min, 1, 2 or 4 hours, with a live countdown and progress bar. When the timer ends everything turns off.
@@ -34,7 +34,8 @@
 - **Watchdog** — the helper treats a request older than 90 s (app quit, crashed or hung) as "off", so your Mac can never get stuck unable to sleep. Quitting the app restores normal sleep immediately.
 - **Animated menu-bar icon** — a screen with the app icon's sunrise inside. Off is a hollow sun resting on the bottom of the screen. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts to the middle of the screen as a full disc. It is a template image, so it matches light and dark menu bars; the animation pauses while your screens sleep, and under Reduce Motion it simply switches between still frames.
 - **Launch at login** (on by default after the first launch) and settings that persist.
-- One panel in the menu bar with a live status header, a card per mode, tooltips on everything and full VoiceOver and keyboard support; it respects Reduce Motion and Increase Contrast. No Dock icon, no network, no analytics.
+- **Updates itself** — checks GitHub about once a day (you can turn that off), shows an *Update available* card in the panel and a dot on the icon, and **Update Now** installs the signed update and relaunches with your settings intact. [Details below.](#updates)
+- One panel in the menu bar with a live status header, a card per mode, tooltips on everything and full VoiceOver and keyboard support; it respects Reduce Motion and Increase Contrast. No Dock icon, no analytics, no network beyond the update check.
 
 ## Screenshots
 
@@ -50,7 +51,7 @@
 
 ### Lid closed
 
-Assertions do not stop a MacBook from sleeping when the lid closes. The only reliable override on Apple Silicon is `SleepDisabled` in `IOPMrootDomain`, which needs root. SleepLess therefore installs a **root launchd helper** — a short shell script, [`sleepless-helper.sh`](sleepless-helper.sh) — with a single macOS admin prompt the first time you flip the switch:
+Assertions do not stop a MacBook from sleeping when the lid closes. The only reliable override on Apple Silicon is `SleepDisabled` in `IOPMrootDomain`, which needs root. SleepLess therefore installs a **root launchd helper** — a short shell script, [`sleepless-helper.sh`](sleepless-helper.sh) — from the panel's one-time setup card (or the *Set up…* button on this card): a single macOS authorization prompt, your password or Touch ID, that installs everything SleepLess will ever need as root. From then on nothing asks again — a new version's helper files are installed by the helper itself, and only when they carry a manifest signed with the CyborgFingers publisher key (see [Updates](#updates)):
 
 1. The app writes `1` or `0` to `/Library/Application Support/SleepLess/lid` and rewrites it every 30 s while lid-closed mode is on.
 2. launchd runs the helper on every write and every 30 s; the helper runs `pmset -a disablesleep 1` or `0` to match.
@@ -74,7 +75,7 @@ The app also reads the live `SleepDisabled` flag, so the panel shows whether lid
 | Safety cut-offs (charging / thermal / battery) | | ✓ | ✓ |
 | Auto-off timer with countdown | `-t` seconds | ✓ | ✓ |
 | Watchdog restores sleep if the app dies | n/a | ✓ | ✓ |
-| Root helper | none | XPC daemon via `SMAppService` | shell script via launchd, one password prompt |
+| Root helper | none | XPC daemon via `SMAppService` | shell script via launchd, one prompt (password or Touch ID), signed self-updates |
 | Download | | notarized DMG, auto-updates | DMG (not yet notarized) or build from source |
 
 If you want a mature, feature-rich alternative with a notarized download, [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704) is the well-known one.
@@ -107,7 +108,7 @@ cd SleepLess
 
 - SleepLess lives in the **menu bar** — look for the small screen-with-a-sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it (or right-click / ⌃-click) for the settings panel. The panel shows this tip once.
 - It registers itself as a **login item** on first launch (macOS may show a "background items added" notification). Untick *Launch at login* in the panel if you would rather not.
-- The first time you turn on **Keep awake with lid closed**, macOS asks for your **administrator password once** to install the helper. You will not be asked again (unless a future version updates the helper, which the app detects and re-installs with one prompt).
+- The panel opens with a **one-time setup** card for the helper behind lid-closed mode and the charging light: **Set up now** brings one macOS prompt — your password, or Touch ID on Macs that have it — and nothing asks again. **Later** leaves those two features off, each with its own *Set up…* button, until you are ready. (A *Reinstall helper…* link under *Safety* is there if the helper is ever removed.)
 - If you use **Bartender**, **Ice** or a similar menu-bar organiser, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there.
 
 ## Usage
@@ -131,6 +132,14 @@ A **quick click** on the menu-bar icon turns SleepLess on or off: on brings back
 Every control has a tooltip, everything works with the keyboard and VoiceOver, and the panel respects Reduce Motion (no shimmer, no transitions) and Increase Contrast.
 
 Whenever a safety guard turns something off, the panel tells you why.
+
+## Updates
+
+SleepLess checks GitHub for a newer release about 10 seconds after launch and then once a day — one plain request to `api.github.com` for the latest release, with no account and nothing about you or your Mac — and whenever you click **Check for Updates** in the panel. Untick **Check for updates automatically** to stop the daily check (the button still works). When there is one, the panel shows an *Update available* card with the version, the first lines of the release notes and a *What's new…* link, and a small dot appears on the menu-bar icon (macOS may also show a notification, if you allow SleepLess notifications).
+
+**Update Now** downloads `SleepLess.app.zip` from the release and checks its **Ed25519 signature** against the CyborgFingers publisher key built into the app — a download that doesn't verify is never unpacked. It then unpacks the zip beside the app, checks that the new bundle really is SleepLess at the advertised, newer version with a valid code signature, and hands over to a tiny script that waits for SleepLess to quit, swaps the two bundles with two renames (the old one is put back if anything fails) and relaunches. SleepLess quits normally, so brightness, the keyboard light and the charging light are handed back first. It all takes a couple of seconds. **Later** hides the card until the next check; **Skip** ignores that version.
+
+Your settings live outside the app (`~/Library/Preferences/io.github.cyborgfingers.sleepless.plist`), so they survive, and so does *Launch at login*. If the update changes the helper, the installed helper takes the new files by itself: they come with a manifest signed with the same publisher key, which the root-owned helper verifies (signature, every file's hash, no downgrade) before installing anything, so there is no new prompt. If SleepLess can't replace itself where it is — running from the DMG, say, or from a folder you can't write to — the card says so and offers the download page instead.
 
 ## Safety
 
@@ -163,19 +172,27 @@ If SleepLess is still listed under *System Settings → General → Login Items*
 ./build.sh && build/SleepLess.app/Contents/MacOS/SleepLess --selftest
 ```
 
-checks the brightness round-trip (it briefly nudges brightness by 10 %), that both sleep assertions register, that the battery can be read, and the menu-bar click logic (tap / hold / right-click, and what a tap turns on and off) — handy after a macOS update, since brightness uses a private API.
+checks the brightness round-trip (it briefly nudges brightness by 10 %), that both sleep assertions register, that the battery can be read, the menu-bar click logic (tap / hold / right-click, and what a tap turns on and off), and the updater's pure parts — version ordering (1.10 > 1.9, tags with and without `v`, pre-releases ignored), the release-feed parser, Ed25519 verification with a throwaway key pair (good, tampered, wrong key), and the bundle-swap script on a fake app in a temp folder (a success, and a failure that must put the old app back) — handy after a macOS update, since brightness uses a private API.
 
 ```bash
 ./test-helper.sh
 ```
 
-runs the helper against a fake `pmset` (no root needed) and checks that a fresh request disables sleep, a stale request restores it, a `SleepDisabled` set by someone else is left alone, and a `0` request undoes the helper's own `SleepDisabled`.
+runs the helper against a fake `pmset` and a fake light tool (no root needed) and checks that a fresh request disables sleep, a stale request restores it, a `SleepDisabled` set by someone else is left alone, a `0` request undoes the helper's own `SleepDisabled`, only `off`/`on` ever reach the light tool, and — with throwaway keys and a fake app bundle — that a signed helper update is installed exactly once, while a file changed after signing, a manifest signed with another key, a downgrade, an unsigned bundle, a symlinked request and a request that isn't an app path all leave the installed helper untouched.
+
+```bash
+./test-update.sh
+```
+
+runs the in-app updater end to end without GitHub: it serves a fake latest-release feed and a signed zip of this build re-versioned as 9.9.9 from a local web server, then runs a *copy* of the app from a temp folder with `--update-test <feed> <key> <log>`, which does exactly what Update Now does — check, download, verify, unpack, sanity-check, swap, relaunch — and proves the copy comes back as 9.9.9 with nothing left behind, that a zip signed with the wrong key and a tampered zip are refused with the copy untouched, and that your real settings never change. Your installed SleepLess is not involved.
 
 ## Security & privacy
 
-- **No network, no analytics, no accounts.** Nothing leaves your Mac.
+- **No analytics, no accounts.** The only network activity is the [update check](#updates) — a plain request to GitHub for the latest release, about once a day, which you can turn off — and the download you start with Update Now. Nothing about you or your Mac is sent.
+- **Updates are signed.** Every release's `SleepLess.app.zip` carries an Ed25519 signature made with the CyborgFingers publisher key; the app verifies it with the public key compiled in ([`cyborgfingers.pub`](cyborgfingers.pub)) before unpacking, then checks the bundle id, version and code signature of what it unpacked. Nothing from a download ever runs except that verified app.
 - **Brightness** is read and set through the private `DisplayServices` framework (`DisplayServicesGetBrightness` / `DisplayServicesSetBrightness`). Private APIs can change between macOS releases; `--selftest` tells you if they did.
-- **The root helper** is a short, readable shell script. It only ever runs `pmset -g` and `pmset -a disablesleep 0|1`, plus `sleepless-led off|on` for the charging light (that tool only ever writes the one SMC key that picks the MagSafe light's colour). It is installed by `/bin/sh sleepless-helper.sh install <user>` under a standard macOS admin prompt, and the app checks that the installed copy is byte-for-byte identical to the one in its bundle before trusting it.
+- **The root helper** is a short, readable shell script. It only ever runs `pmset -g` and `pmset -a disablesleep 0|1`, plus `sleepless-led off|on` for the charging light (that tool only ever writes the one SMC key that picks the MagSafe light's colour). It is installed by `/bin/sh sleepless-helper.sh install <user>` after the system's authorization prompt (Authorization Services, `system.privilege.admin` — the same sheet installers use, with Touch ID where macOS offers it), and the app checks that the installed copy is byte-for-byte identical to the one in its bundle before trusting it.
+- **The helper updates itself only from signed files.** When a new version of SleepLess changes it, the app writes its bundle path to a request file; the root helper copies the files into a root-owned folder first, runs its own root-owned verifier (`sleepless-verify`, compiled from [`tools/helper-verify.swift`](tools/helper-verify.swift)) against the root-owned copy of the publisher key — manifest signature, every file's hash, no downgrade — and only then installs them, each with a rename. Anything else is ignored, and the panel offers the setup card instead. The prompt at setup is therefore the only one there will ever be.
 - **The request file** (`/Library/Application Support/SleepLess/lid`) is owned by your user in a root-owned directory. Any process running as your user could write `1` to it. The impact is limited to keeping the Mac awake (with the lid closed) while that process keeps rewriting the file, and the 90 s watchdog still applies. The helper reads only the first byte.
 - The app is **not sandboxed** (it needs IOKit and the private brightness API) and is ad-hoc signed; you build it yourself.
 

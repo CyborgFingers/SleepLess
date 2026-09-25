@@ -46,12 +46,15 @@ copyright, trademarks and other intellectual property rights. All rights not exp
 At your request the Software changes how your Mac sleeps: it holds macOS power-management assertions, can dim the screen and adjust the keyboard backlight, and — only if you turn on lid-closed mode and approve an administrator prompt — installs a helper that runs with administrator privileges to set the system's SleepDisabled setting and switch the MagSafe charging light off while the lid is closed. A Mac kept awake with its lid closed can run warm; the Software includes safety cut-offs, but you are responsible for using it sensibly (for example, not in a closed bag under heavy load). You can undo these changes as described in the README's Uninstall section.
 
 7. PRIVACY
-The Software does not collect, transmit, share or sell personal information, and it makes no network connections of its
-own. Details are in PRIVACY.md.
+The Software does not collect, transmit, share or sell personal information. Its only network activity is checking
+GitHub for updates and, when you choose to update, downloading them; you can turn update checks off. Details are in
+PRIVACY.md.
 
 8. UPDATES AND SUPPORT
 CyborgFingers may release updates, change or remove features, or stop offering the Software at any time, and has no
-obligation to provide support, maintenance or updates. Updates may be provided under updated terms.
+obligation to provide support, maintenance or updates. The Software can check for, download and install updates when
+you ask it to; each update is provided under the licence agreement current at its release, which you accept by
+installing it.
 
 9. PAID VERSIONS AND PRICING
 This agreement covers the versions and features of the Software that CyborgFingers makes available free of charge.

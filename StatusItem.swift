@@ -35,7 +35,10 @@ import SwiftUI
         button.action = #selector(clicked)
         button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         button.setAccessibilityHelp("Click to turn SleepLess on or off. Press and hold, or right-click, for settings.")
-        keeper.icon.$image.sink { image in MainActor.assumeIsolated { button.image = image } }.store(in: &sinks)
+        // The glyph, with a small dot at its corner while an update waits in the panel.
+        keeper.icon.$image.combineLatest(Updater.shared.$state.map { $0 != .idle && Updater.shared.available != nil }.removeDuplicates())
+            .sink { image, update in MainActor.assumeIsolated { button.image = update ? Updater.badged(image) : image } }
+            .store(in: &sinks)
         keeper.$s.map { $0.screenOn || $0.lidOn }.removeDuplicates()
             .sink { on in MainActor.assumeIsolated { button.setAccessibilityLabel(on ? "SleepLess: on" : "SleepLess: off") } }
             .store(in: &sinks)

@@ -32,6 +32,12 @@ struct Panel: View {
                 }
                 .transition(.opacity)
             }
+            if !keeper.helperReady, !keeper.setupLater {
+                SetupCard(appName: "SleepLess", what: "Lid-closed mode and the charging light", updating: keeper.helperStale, busy: keeper.helperUpdating,
+                          setUp: { keeper.setUpHelper() }, later: { withAnimation(reduceMotion ? nil : panelEase) { keeper.setupLater = true } })
+                    .transition(.opacity)
+            }
+            UpdateCard(updater: .shared)
             ScreenCard(keeper: keeper)
             LidCard(keeper: keeper)
             TimerSection(keeper: keeper)
@@ -46,6 +52,7 @@ struct Panel: View {
                     .help("Quit SleepLess (⌘Q). Brightness and normal sleep come back straight away.")
             }
             .font(.callout)
+            UpdateRows(updater: .shared)
             HStack(spacing: 4) {
                 Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · by")
                 Link("CyborgFingers", destination: URL(string: "https://github.com/CyborgFingers")!)
@@ -61,6 +68,7 @@ struct Panel: View {
         .padding(14)
         .frame(width: 344)
         .animation(reduceMotion ? nil : panelEase, value: keeper.note)
+        .animation(reduceMotion ? nil : panelEase, value: keeper.helperReady)
     }
 }
 
@@ -212,6 +220,7 @@ struct ModeCard<Rows: View>: View {
     let symbol: String
     let tint: Color
     let help: String
+    var disabled = false   // the switch can't be flipped (its helper isn't set up)
     @Binding var isOn: Bool
     @ViewBuilder let rows: Rows
     @Environment(\.colorSchemeContrast) private var contrast
@@ -227,7 +236,7 @@ struct ModeCard<Rows: View>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                Toggle(title, isOn: $isOn).labelsHidden().toggleStyle(.switch).help(help)
+                Toggle(title, isOn: $isOn).labelsHidden().toggleStyle(.switch).help(help).disabled(disabled)
             }
             rows
         }
