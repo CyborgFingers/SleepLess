@@ -37,6 +37,7 @@ struct TapRestore: Codable, Equatable {
     private var dimmedTo: Float?
     private var lastRequest: (on: Bool, at: Date)?
     private var lastOnAC: Bool?
+    private var lastDarken = Date.distantPast
     private var timer: Timer?
     private static let heartbeat: TimeInterval = 30   // the helper treats > 90 s as a dead app
 
@@ -134,8 +135,11 @@ struct TapRestore: Codable, Equatable {
         }
         if n != s { s = n; return }   // didSet re-runs tick with the settled settings
 
-        applyAwake(s.screenOn)
-        applyDim()
+        // Lid shut but the Mac kept up: screen + keyboard light off, everything keeps running. With a monitor
+        // plugged in it's ordinary clamshell use, so hands off.
+        let darkLid = Power.lidClosed && !Display.hasExternal
+        applyAwake(s.screenOn && !darkLid)
+        if darkLid { restoreBrightness(); darken(now) } else { applyDim() }
         applyLid(now)
         icon.show(screen: s.screenOn, lid: s.lidOn)
     }
@@ -166,6 +170,14 @@ struct TapRestore: Codable, Equatable {
         dimmedFrom = original
         dimmedTo = target
         Brightness.set(target)
+    }
+
+    /// Sleeps the screens while the lid is shut, re-checking every 10 s in case something lights them again.
+    /// Opening the lid wakes them as usual.
+    private func darken(_ now: Date) {
+        guard Display.anyAwake, now.timeIntervalSince(lastDarken) >= 10 else { return }
+        Display.sleepNow()
+        lastDarken = now
     }
 
     private func restoreBrightness() {

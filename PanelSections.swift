@@ -62,7 +62,7 @@ struct LidCard: View {
 
     private var status: String {
         switch (keeper.s.lidOn, keeper.lidActive) {
-        case (true, true): return "Close the lid, it keeps running"
+        case (true, true): return "Close the lid: screen off, Mac keeps running"
         case (true, false): return "Starting…"
         case (false, true): return "Sleep is already disabled by something else (pmset? Lidless?)"
         case (false, false): return keeper.helperReady ? "Lid closed: sleeps as usual" : "Set up once with your password"
@@ -80,7 +80,7 @@ struct LidCard: View {
     var body: some View {
         ModeCard(title: "Keep awake with lid closed", subtitle: status,
                  symbol: "laptopcomputer", tint: .indigo,
-                 help: "Keeps the Mac running with the lid shut by setting SleepDisabled through a small root helper (one password prompt the first time). A watchdog restores normal sleep if SleepLess ever stops.",
+                 help: "Keeps the Mac running with the lid shut by setting SleepDisabled through a small root helper (one password prompt the first time). Closing the lid turns the screen and keyboard light off while everything keeps running; open it and you are right where you left off. A watchdog restores normal sleep if SleepLess ever stops.",
                  isOn: Binding(get: { keeper.s.lidOn }, set: { on in withAnimation(animation) { keeper.setLid(on) } })) {
             Divider()
             Button {

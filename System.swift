@@ -12,10 +12,7 @@ enum Brightness {
     private static let setFn = dlsym(lib, "DisplayServicesSetBrightness").map { unsafeBitCast($0, to: Set.self) }
 
     private static var display: CGDirectDisplayID {
-        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
-        var count: UInt32 = 0
-        CGGetOnlineDisplayList(16, &ids, &count)
-        return ids.prefix(Int(count)).first { CGDisplayIsBuiltin($0) != 0 } ?? CGMainDisplayID()
+        Display.online.first { CGDisplayIsBuiltin($0) != 0 } ?? CGMainDisplayID()
     }
 
     static func get() -> Float? {
@@ -26,6 +23,27 @@ enum Brightness {
 
     static func set(_ value: Float) {
         guard let setFn, setFn(display, value) == 0 else { return NSLog("SleepLess: brightness set failed") }
+    }
+}
+
+enum Display {
+    static var online: [CGDirectDisplayID] {
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
+        var count: UInt32 = 0
+        CGGetOnlineDisplayList(16, &ids, &count)
+        return Array(ids.prefix(Int(count)))
+    }
+
+    /// A monitor is plugged in (lid shut + monitor = ordinary clamshell use).
+    static var hasExternal: Bool { online.contains { CGDisplayIsBuiltin($0) == 0 } }
+
+    /// Some screen is still lit.
+    static var anyAwake: Bool { online.contains { CGDisplayIsAsleep($0) == 0 } }
+
+    /// `pmset displaysleepnow`: screens off (the keyboard backlight goes with them), the Mac itself stays up.
+    static func sleepNow() {
+        do { try Process.run(URL(fileURLWithPath: "/usr/bin/pmset"), arguments: ["displaysleepnow"]) }
+        catch { NSLog("SleepLess: displaysleepnow failed: \(error)") }
     }
 }
 
@@ -68,9 +86,13 @@ enum Power {
     private static let rootDomain = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
 
     /// The live SleepDisabled flag — confirms the helper really applied lid-closed mode.
-    static var sleepDisabled: Bool {
-        IORegistryEntryCreateCFProperty(rootDomain, "SleepDisabled" as CFString, kCFAllocatorDefault, 0)?
-            .takeRetainedValue() as? Bool ?? false
+    static var sleepDisabled: Bool { rootFlag("SleepDisabled") }
+
+    /// The lid (clamshell) is shut.
+    static var lidClosed: Bool { rootFlag("AppleClamshellState") }
+
+    private static func rootFlag(_ key: String) -> Bool {
+        IORegistryEntryCreateCFProperty(rootDomain, key as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? Bool ?? false
     }
 }
 

@@ -147,7 +147,7 @@
     <div class="grid">
       <div class="card"><div class="icon">☀️</div><h3>Keep screen awake</h3><p>Lid open: the screen never idle-dims or sleeps and the Mac never idle-sleeps — the same assertions as <code>caffeinate -di</code>. No admin rights.</p></div>
       <div class="card"><div class="icon">🌙</div><h3>Dim while idle</h3><p>Stay the same, or dim to a brightness you pick after 30 s to 10 min. Any key press or mouse move brings your brightness straight back. Never brightens a screen already below the target.</p></div>
-      <div class="card"><div class="icon">💻</div><h3>Keep awake with lid closed</h3><p>Sets the one flag that beats lid-close sleep on Apple Silicon (<code>SleepDisabled</code>) through a tiny root helper you approve once with your password.</p></div>
+      <div class="card"><div class="icon">💻</div><h3>Keep awake with lid closed</h3><p>Sets the one flag that beats lid-close sleep on Apple Silicon (<code>SleepDisabled</code>) through a tiny root helper you approve once with your password. Close the lid and the screen and keyboard light go off while everything keeps running.</p></div>
       <div class="card"><div class="icon">🛡️</div><h3>Safety cut-offs</h3><p>Only while charging. Pause when running hot. Low-battery cutoff (default 20 %). Turn on when you plug in, off when you unplug. All under one <em>Safety</em> disclosure with a one-line summary.</p></div>
       <div class="card"><div class="icon">⏱️</div><h3>Turn off after</h3><p>15 min to 4 hours with a live countdown and progress bar, then everything turns off and normal sleep is back.</p></div>
       <div class="card"><div class="icon">👆</div><h3>One click on, one click off</h3><p>A quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on) or off. Press and hold, or right-click, for the settings panel.</p></div>
@@ -170,6 +170,7 @@
         <div class="step"><b>1</b><div>The app writes <code>1</code> or <code>0</code> to a request file and rewrites it every 30 s.</div></div>
         <div class="step"><b>2</b><div>launchd runs the root helper — a short shell script — on every write and every 30 s; it runs <code>pmset -a disablesleep 1|0</code> to match.</div></div>
         <div class="step"><b>3</b><div>A request older than 90 s counts as <code>0</code> — the watchdog. The helper only undoes a <code>SleepDisabled</code> it set itself.</div></div>
+        <div class="step"><b>4</b><div>Close the lid (no monitor plugged in) and the app puts the display to sleep — keyboard light off too — while the Mac stays fully awake. Open it and you're right where you left off.</div></div>
       </div>
     </div>
     <p class="note" style="margin-top: 22px">The panel reads the live <code>SleepDisabled</code> flag, so it shows whether lid-closed mode is really active — and tells you if something else has disabled sleep.</p>
