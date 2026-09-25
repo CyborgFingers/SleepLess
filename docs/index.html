@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SleepLess — keep your Mac awake, lid open or closed</title>
+<meta name="description" content="SleepLess is a free, open-source macOS menu-bar app that keeps your Mac awake with the lid open (optionally dimming the screen) or with the lid closed, with safety cut-offs, an auto-off timer and a watchdog.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0E0F2E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SleepLess — keep your Mac awake, lid open or closed">
+<meta property="og:description" content="Free, open-source macOS menu-bar app. Keep the screen on (or dim it), or keep the Mac awake with the lid closed — safely.">
+<meta property="og:image" content="https://cyborgfingers.github.io/SleepLess/assets/banner.png">
+<meta property="og:url" content="https://cyborgfingers.github.io/SleepLess/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/icon-512.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icon-512.png">
+<style>
+  :root {
+    --night-1: #0E0F2E; --night-2: #1E1A52; --night-3: #3A2668;
+    --sun: #FFB35A; --cream: #FFD9A8; --coral: #E2624F;
+    --bg: #FAFAFC; --bg-2: #FFFFFF; --text: #1C1C1E; --muted: #5E5E66; --line: #E3E3EA; --code: #F1F1F5;
+    --shadow: 0 10px 30px rgba(20, 16, 60, .12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101020; --bg-2: #181830; --text: #ECECF4; --muted: #A5A5BC; --line: #2A2A48; --code: #0B0B1A;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  a { color: inherit; }
+  img { max-width: 100%; height: auto; display: block; }
+  .wrap { width: min(1040px, 100% - 40px); margin: 0 auto; }
+  h1, h2, h3 { font-family: ui-rounded, -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Segoe UI", Roboto, sans-serif; letter-spacing: -.02em; margin: 0; }
+  h2 { font-size: clamp(28px, 4vw, 38px); margin-bottom: 8px; }
+  h3 { font-size: 19px; margin-bottom: 6px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  section { padding: 72px 0; }
+  section + section { border-top: 1px solid var(--line); }
+  .lead { color: var(--muted); font-size: 18px; max-width: 640px; margin-bottom: 36px; }
+
+  /* Hero: always night, like the banner. */
+  .hero {
+    color: #fff; position: relative; overflow: hidden; padding: 88px 0 96px;
+    background:
+      radial-gradient(760px 420px at 50% 115%, rgba(255, 168, 90, .55), rgba(226, 98, 79, .22) 50%, transparent 72%),
+      linear-gradient(180deg, var(--night-1) 0%, var(--night-2) 55%, var(--night-3) 100%);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .8;
+    background-image:
+      radial-gradient(2px 2px at 8% 18%, #fff 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 22% 36%, #fff 50%, transparent 52%),
+      radial-gradient(2px 2px at 31% 9%, #fff 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 58% 14%, #fff 50%, transparent 52%),
+      radial-gradient(2px 2px at 71% 28%, #fff 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 84% 10%, #fff 50%, transparent 52%),
+      radial-gradient(2px 2px at 93% 30%, #fff 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 46% 40%, #fff 50%, transparent 52%);
+  }
+  .hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--cream); opacity: .9; }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center; }
+  .hero img { width: 232px; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .45)); }
+  .hero h1 { font-size: clamp(56px, 9vw, 108px); line-height: 1; font-weight: 800; letter-spacing: -.035em; }
+  .hero .tag { font-size: clamp(20px, 2.6vw, 28px); color: var(--cream); font-weight: 500; margin: 14px 0 6px; }
+  .hero .sub { color: #B4B0E0; font-size: 18px; margin-bottom: 26px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-block; padding: 12px 20px; border-radius: 12px; font-weight: 600; text-decoration: none;
+    background: var(--sun); color: #1B1A3F; box-shadow: 0 6px 18px rgba(255, 179, 90, .35);
+  }
+  .btn.ghost { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none; border: 1px solid rgba(255, 255, 255, .25); }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+  .badges span { font-size: 13px; padding: 5px 10px; border-radius: 999px; background: rgba(255, 255, 255, .12); color: #E6E4FF; }
+
+  .frame { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); background: var(--bg-2); }
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }
+  .card .icon { font-size: 26px; margin-bottom: 8px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15.5px; }
+  .two { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 12px; margin: 12px 0; }
+  .step b { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--sun); color: #1B1A3F; font-size: 14px; }
+  .shots { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); max-width: 820px; }
+  .shots figcaption { text-align: center; color: var(--muted); font-size: 14px; margin-top: 10px; }
+  figure { margin: 0; }
+  pre { background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; overflow-x: auto; font: 14.5px/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin: 0 0 14px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .93em; }
+  p code, li code { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
+  ul { padding-left: 20px; } li { margin: 6px 0; }
+  .note { border-left: 3px solid var(--sun); padding: 4px 14px; color: var(--muted); font-size: 15.5px; }
+  footer { padding: 36px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14.5px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
+
+  @media (max-width: 720px) {
+    section { padding: 52px 0; }
+    .hero { padding: 56px 0 64px; }
+    .hero .wrap { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .hero img { width: 168px; }
+    .btns { justify-content: center; }
+    .badges { justify-content: center; }
+    .hero .sub { margin-bottom: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <img src="assets/icon-512.png" width="232" height="232" alt="SleepLess app icon: a sun rising over a horizon inside a rounded lid">
+    <div>
+      <h1>SleepLess</h1>
+      <p class="tag">Keep your Mac awake — lid open or closed.</p>
+      <p class="sub">Free, open-source menu-bar app for macOS 13+ on Apple Silicon.</p>
+      <div class="btns">
+        <a class="btn" href="#install">Build &amp; install</a>
+        <a class="btn ghost" href="https://github.com/CyborgFingers/SleepLess">View on GitHub</a>
+      </div>
+      <div class="badges"><span>macOS 13+</span><span>Apple Silicon</span><span>Swift &amp; SwiftUI</span><span>MIT license</span><span>No network, no analytics</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="icon">
+  <div class="wrap">
+    <h2>Lives in your menu bar</h2>
+    <p class="lead">A rounded lid with a horizon line. Turn SleepLess on and rays rise like a sunrise, shimmer while it is on, and set again when it turns off. In lid-closed mode a sun comes up. It is a template image, so it fits light and dark menu bars, and the animation pauses while your screens sleep.</p>
+    <div class="frame" style="max-width: 720px">
+      <img src="assets/menubar-animation.gif" width="720" height="250" alt="Animated SleepLess menu-bar icon on a light and a dark menu bar: off, then rays rising, then a sun for lid-closed mode, then setting again">
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Everything you need, nothing you don't</h2>
+    <p class="lead">One panel, a handful of switches, and guard rails so it never bites you.</p>
+    <div class="grid">
+      <div class="card"><div class="icon">☀️</div><h3>Keep screen awake</h3><p>Lid open: the screen never idle-dims or sleeps and the Mac never idle-sleeps — the same assertions as <code>caffeinate -di</code>. No admin rights.</p></div>
+      <div class="card"><div class="icon">🌙</div><h3>Dim while idle</h3><p>Stay the same, or dim to a brightness you pick after 30 s to 10 min. Any key press or mouse move brings your brightness straight back. Never brightens a screen already below the target.</p></div>
+      <div class="card"><div class="icon">💻</div><h3>Keep awake with lid closed</h3><p>Sets the one flag that beats lid-close sleep on Apple Silicon (<code>SleepDisabled</code>) through a tiny root helper you approve once with your password.</p></div>
+      <div class="card"><div class="icon">🛡️</div><h3>Safety cut-offs</h3><p>Only while charging. Pause when running hot. Low-battery cutoff (default 20 %). Automatically enable when you plug in, off when you unplug.</p></div>
+      <div class="card"><div class="icon">⏱️</div><h3>Turn off after</h3><p>15 min to 4 hours with a live countdown, then everything turns off and normal sleep is back.</p></div>
+      <div class="card"><div class="icon">🐕</div><h3>Watchdog</h3><p>If the app quits, crashes or hangs, the helper restores normal sleep within about 90 s. Your Mac can never get stuck unable to sleep.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="lead">Two different problems, two different mechanisms — both readable in a few hundred lines of Swift and one shell script.</p>
+    <div class="two">
+      <div class="card">
+        <h3>Lid open</h3>
+        <p>SleepLess holds two IOKit power assertions, <code>PreventUserIdleDisplaySleep</code> and <code>PreventUserIdleSystemSleep</code>, and releases them the moment you turn it off or quit. Dimming uses the same private <code>DisplayServices</code> brightness calls the keyboard keys use, and watches the session idle time to restore your brightness on the first input.</p>
+      </div>
+      <div class="card">
+        <h3>Lid closed</h3>
+        <div class="step"><b>1</b><div>The app writes <code>1</code> or <code>0</code> to a request file and rewrites it every 30 s.</div></div>
+        <div class="step"><b>2</b><div>launchd runs the 70-line root helper on every write and every 30 s; it runs <code>pmset -a disablesleep 1|0</code> to match.</div></div>
+        <div class="step"><b>3</b><div>A request older than 90 s counts as <code>0</code> — the watchdog. The helper only undoes a <code>SleepDisabled</code> it set itself.</div></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top: 22px">The panel reads the live <code>SleepDisabled</code> flag, so it shows whether lid-closed mode is really active — and tells you if something else has disabled sleep.</p>
+  </div>
+</section>
+
+<section id="panel">
+  <div class="wrap">
+    <h2>The panel</h2>
+    <p class="lead">Light or dark, it follows your Mac.</p>
+    <div class="shots">
+      <figure><div class="frame"><img src="assets/panel-light.png" width="752" height="1198" alt="SleepLess panel in light appearance"></div><figcaption>Light</figcaption></figure>
+      <figure><div class="frame"><img src="assets/panel-dark.png" width="752" height="1198" alt="SleepLess panel in dark appearance"></div><figcaption>Dark</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Build &amp; install</h2>
+    <p class="lead">There are no binary downloads — you build it yourself in a few seconds with Xcode or the Command Line Tools (<code>xcode-select --install</code>).</p>
+<pre><code>git clone https://github.com/CyborgFingers/SleepLess.git
+cd SleepLess
+./build.sh install</code></pre>
+    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the lid icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Turning on lid-closed mode asks for your password once. <code>./build.sh uninstall</code> removes the helper, restores normal sleep and deletes the app.</p>
+    <ul class="muted">
+      <li><strong>Test it:</strong> <code>SleepLess.app/Contents/MacOS/SleepLess --selftest</code> checks brightness, assertions and battery; <code>./test-helper.sh</code> checks the helper's watchdog with a fake <code>pmset</code>.</li>
+      <li><strong>Privacy:</strong> no network, no analytics. The helper only ever runs <code>pmset</code>; any process running as your user could write the request file, but the worst case is a Mac that stays awake, and the watchdog still applies.</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 CyborgFingers · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">MIT license</a></span>
+    <span>Inspired by <a href="https://github.com/nghialuong/Lidless">Lidless</a> — independent implementation.</span>
+    <span><a href="https://github.com/CyborgFingers/SleepLess">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
