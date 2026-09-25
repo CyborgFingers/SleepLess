@@ -10,7 +10,8 @@ import AppKit
     private var wantRise: CGFloat = 0, wantSun: CGFloat = 0
     private var screensAsleep = false
     private var timer: Timer?
-    private static let fps: CGFloat = 15
+    private static let fps: CGFloat = 20        // sunrise / sunset
+    private static let idleFPS: CGFloat = 6     // ponytail: steady shimmer at 6 fps keeps always-on cost ~1% CPU (15 fps was ~4%)
 
     init() {
         let center = NSWorkspace.shared.notificationCenter
@@ -30,19 +31,21 @@ import AppKit
     }
 
     private func run() {
-        let moving = !screensAsleep && (rise != wantRise || sun != wantSun || wantRise == 1)
-        if moving, timer == nil {
-            let timer = Timer(timeInterval: 1 / Double(Self.fps), repeats: true) { _ in MainActor.assumeIsolated { self.step() } }
-            RunLoop.main.add(timer, forMode: .common)
-            self.timer = timer
-        } else if !moving {
+        let transitioning = rise != wantRise || sun != wantSun
+        let moving = !screensAsleep && (transitioning || wantRise == 1)
+        let interval = 1 / Double(transitioning ? Self.fps : Self.idleFPS)
+        if !moving || timer?.timeInterval != interval {
             timer?.invalidate()
             timer = nil
         }
+        guard moving, timer == nil else { return }
+        let timer = Timer(timeInterval: interval, repeats: true) { _ in MainActor.assumeIsolated { self.step() } }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     private func step() {
-        let dt = 1 / Self.fps
+        let dt = CGFloat(timer?.timeInterval ?? 1 / Double(Self.fps))
         rise = Self.approach(rise, wantRise, by: dt / 0.8)   // full sunrise in 0.8 s
         sun = Self.approach(sun, wantSun, by: dt / 0.5)
         phase += dt * 2 * .pi / 2.4                           // one shimmer wave every 2.4 s
