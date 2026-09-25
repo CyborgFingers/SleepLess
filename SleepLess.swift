@@ -3,187 +3,32 @@ import IOKit.pwr_mgt
 
 // SleepLess — Lidless plus the lid-open case: keep the screen on (optionally dimmed) and/or keep the Mac
 // awake with the lid closed, with Lidless's safety cut-offs, auto-off timer and launch at login.
+// The menu-bar item lives in StatusItem.swift, the panel UI in Panel.swift / PanelSections.swift.
 
 @main struct SleepLessApp: App {
-    @StateObject private var keeper = Keeper()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     init() {
         if CommandLine.arguments.contains("--selftest") { selfTest() }
     }
 
     var body: some Scene {
-        MenuBarExtra {
-            Panel(keeper: keeper)
-        } label: {
-            MenuLabel(icon: keeper.icon, isOn: keeper.s.screenOn || keeper.s.lidOn)
-        }
-        .menuBarExtraStyle(.window)
+        SwiftUI.Settings { EmptyView() }   // no windows of its own; the status item owns the panel
     }
 }
 
-struct MenuLabel: View {
-    @ObservedObject var icon: MenuIcon
-    let isOn: Bool
+@MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var statusItem: StatusItemController?
 
-    var body: some View {
-        Image(nsImage: icon.image).accessibilityLabel(isOn ? "SleepLess: on" : "SleepLess: off")
-    }
-}
-
-struct Panel: View {
-    @ObservedObject var keeper: Keeper
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("SleepLess").font(.headline)
-                Spacer()
-                if let battery = keeper.battery {
-                    Label("\(battery.percent)%", systemImage: battery.onAC ? "battery.100percent.bolt" : "battery.75percent")
-                        .font(.callout).monospacedDigit().foregroundStyle(.secondary)
-                }
-            }
-            Divider()
-            ScreenSection(keeper: keeper)
-            Divider()
-            LidSection(keeper: keeper)
-            Divider()
-            TimerSection(keeper: keeper)
-            if let note = keeper.note {
-                HStack(alignment: .top) {
-                    Label(note, systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange)
-                    Spacer()
-                    Button { keeper.note = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
-                }
-                .font(.callout)
-                .fixedSize(horizontal: false, vertical: true)
-            }
-            Divider()
-            HStack {
-                Toggle("Launch at login", isOn: Binding(get: { LoginItem.isOn }, set: { keeper.setLoginItem($0) }))
-                    .toggleStyle(.checkbox)
-                Spacer()
-                Button("Quit") { NSApp.terminate(nil) }.keyboardShortcut("q")
-            }
-            .font(.callout)
-        }
-        .padding(16)
-        .frame(width: 320)
-    }
-}
-
-/// Title + subtitle on the left, a switch pinned to the right edge.
-struct SwitchRow: View {
-    let title: String
-    var subtitle: String?
-    var bold = false
-    @Binding var isOn: Bool
-
-    var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(bold ? .body.weight(.semibold) : .callout)
-                if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
-            }
-            Spacer(minLength: 0)
-            Toggle(title, isOn: $isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(bold ? .regular : .small)
-        }
-    }
-}
-
-struct ScreenSection: View {
-    @ObservedObject var keeper: Keeper
-    private let delays = [(0, "Right away"), (30, "30 sec"), (60, "1 min"), (120, "2 min"), (300, "5 min"), (600, "10 min")]
-
-    var body: some View {
-        SwitchRow(title: "Keep screen awake",
-                  subtitle: keeper.s.screenOn ? "Screen stays on, Mac won't sleep" : "Lid open, normal sleep",
-                  bold: true, isOn: $keeper.s.screenOn)
-        Picker("When idle", selection: $keeper.s.dims) {
-            Text("Stay the same").tag(false)
-            Text("Dim").tag(true)
-        }
-        .pickerStyle(.segmented)
-        .font(.callout)
-        if keeper.s.dims {
-            HStack {
-                Image(systemName: "sun.min")
-                Slider(value: $keeper.s.level, in: 0...1)
-                Text("\(Int((keeper.s.level * 100).rounded()))%").monospacedDigit().frame(width: 38, alignment: .trailing)
-            }
-            .font(.callout)
-            Picker("Dim after", selection: $keeper.s.delay) {
-                ForEach(delays, id: \.0) { Text($0.1).tag($0.0) }
-            }
-            .font(.callout)
-        }
-    }
-}
-
-struct LidSection: View {
-    @ObservedObject var keeper: Keeper
-
-    private var status: String {
-        switch (keeper.s.lidOn, keeper.lidActive) {
-        case (true, true): return "Active: close the lid and it keeps running"
-        case (true, false): return "Starting…"
-        case (false, true): return "Sleep is disabled by something else (Lidless? pmset?)"
-        case (false, false): return keeper.helperReady ? "Normal lid-close sleep" : "Asks for your password once to install its helper"
-        }
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        statusItem = StatusItemController(keeper: Keeper())
     }
 
-    var body: some View {
-        SwitchRow(title: "Keep awake with lid closed", subtitle: status, bold: true,
-                  isOn: Binding(get: { keeper.s.lidOn }, set: { keeper.setLid($0) }))
-        Text("Safety").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-        SwitchRow(title: "Only while charging", isOn: $keeper.s.onlyWhileCharging)
-        SwitchRow(title: "Pause when running hot", isOn: $keeper.s.pauseWhenHot)
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text("Low-battery cutoff")
-                Spacer()
-                Text(keeper.s.batteryCutoff == 0 ? "Never" : "\(keeper.s.batteryCutoff)%").monospacedDigit().foregroundStyle(.secondary)
-            }
-            Slider(value: Binding(get: { Double(keeper.s.batteryCutoff) }, set: { keeper.s.batteryCutoff = Int($0) }), in: 0...100, step: 5)
-                .controlSize(.small)
-        }
-        .font(.callout)
-        .disabled(keeper.s.onlyWhileCharging)
-        SwitchRow(title: "Automatically enable when charging",
-                  subtitle: keeper.helperReady ? nil : "Turn lid-closed mode on once first",
-                  isOn: Binding(get: { keeper.s.autoWhenCharging }, set: { keeper.setAutoWhenCharging($0) }))
-    }
-}
-
-struct TimerSection: View {
-    @ObservedObject var keeper: Keeper
-    private let options = [(0, "No limit"), (15, "15 min"), (30, "30 min"), (60, "1 hour"), (120, "2 hours"), (240, "4 hours")]
-
-    var body: some View {
-        Picker("Turn off after", selection: Binding(get: { keeper.s.offAfter }, set: { keeper.setOffAfter($0) })) {
-            ForEach(options, id: \.0) { Text($0.1).tag($0.0) }
-        }
-        .font(.callout)
-        if let offAt = keeper.s.offAt, offAt > .now {
-            Label {
-                HStack(spacing: 4) {
-                    Text("Turning off in")
-                    Text(timerInterval: Date.now...offAt, countsDown: true).monospacedDigit()
-                }
-            } icon: {
-                Image(systemName: "timer")
-            }
-            .font(.callout)
-            .foregroundStyle(.secondary)
-        }
-    }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
 
 /// `SleepLess.app/Contents/MacOS/SleepLess --selftest` checks the OS hooks still work after macOS updates
-/// (briefly nudges brightness). The root helper's logic is covered by test-helper.sh.
+/// (briefly nudges brightness) and the pure menu-bar click logic. The root helper is covered by test-helper.sh.
 private func selfTest() -> Never {
     guard let original = Brightness.get() else { fatalError("FAIL: can't read built-in brightness") }
     let probe: Float = original > 0.5 ? original - 0.1 : original + 0.1
@@ -201,6 +46,23 @@ private func selfTest() -> Never {
     precondition(types.isSuperset(of: ["PreventUserIdleDisplaySleep", "PreventUserIdleSystemSleep"]), "FAIL: assertions not registered: \(types)")
 
     precondition(Power.battery() != nil, "FAIL: can't read the battery")
-    print("PASS: brightness round-trip, display/system sleep assertions, battery (SleepDisabled now \(Power.sleepDisabled))")
+
+    // Menu-bar tap: on → off remembering the modes, off → those modes back; first tap = screen awake.
+    let off = Keeper.tapPlan(screenOn: true, lidOn: true, remembered: TapRestore())
+    precondition(!off.screen && !off.lid && off.remember == TapRestore(screen: true, lid: true), "FAIL: tap should turn both modes off and remember them")
+    let back = Keeper.tapPlan(screenOn: false, lidOn: false, remembered: off.remember)
+    precondition(back.screen && back.lid && back.remember == off.remember, "FAIL: tap should bring both modes back")
+    let first = Keeper.tapPlan(screenOn: false, lidOn: false, remembered: TapRestore())
+    precondition(first.screen && !first.lid, "FAIL: first tap should turn screen awake on")
+    let screenOnly = Keeper.tapPlan(screenOn: true, lidOn: false, remembered: TapRestore(screen: true, lid: true))
+    precondition(screenOnly.remember == TapRestore(screen: true, lid: false), "FAIL: tap should remember only what was on")
+
+    // Click decision: quick press = tap, held past the deadline = hold, right/⌃-click = settings.
+    precondition(StatusItemController.gesture(.leftMouseDown, control: false) { true } == .tap, "FAIL: quick press should be a tap")
+    precondition(StatusItemController.gesture(.leftMouseDown, control: false) { false } == .hold, "FAIL: held press should be a hold")
+    precondition(StatusItemController.gesture(.rightMouseDown, control: false) { true } == .settings, "FAIL: right-click should open settings")
+    precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .settings, "FAIL: control-click should open settings")
+
+    print("PASS: brightness round-trip, display/system sleep assertions, battery, tap/hold logic (SleepDisabled now \(Power.sleepDisabled))")
     exit(0)
 }

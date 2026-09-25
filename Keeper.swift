@@ -17,6 +17,12 @@ struct Settings: Codable, Equatable {
     var offAt: Date?                // pending auto-off
 }
 
+/// The modes a menu-bar tap turns back on: whatever was on when the last tap turned SleepLess off.
+struct TapRestore: Codable, Equatable {
+    var screen = true
+    var lid = false
+}
+
 /// One reconcile loop: every second (and on every settings change) it makes the Mac match `s`.
 @MainActor final class Keeper: ObservableObject {
     @Published var s: Settings { didSet { if s != oldValue { save(); tick() } } }
@@ -75,6 +81,28 @@ struct Settings: Codable, Equatable {
     func setLoginItem(_ on: Bool) {
         note = LoginItem.set(on)
         objectWillChange.send()
+    }
+
+    // MARK: Menu-bar tap (also the panel's main switch)
+
+    /// Pure so --selftest can check it: something on → everything off, remembering what was on;
+    /// everything off → the remembered modes (screen awake by default).
+    nonisolated static func tapPlan(screenOn: Bool, lidOn: Bool, remembered: TapRestore) -> (screen: Bool, lid: Bool, remember: TapRestore) {
+        if screenOn || lidOn { return (false, false, TapRestore(screen: screenOn, lid: lidOn)) }
+        return (remembered.screen, remembered.lid, remembered)
+    }
+
+    func toggleAwake() {
+        let plan = Self.tapPlan(screenOn: s.screenOn, lidOn: s.lidOn, remembered: tapRestore)
+        tapRestore = plan.remember
+        s.screenOn = plan.screen
+        if plan.lid != s.lidOn { setLid(plan.lid) }   // the safety checks and notes still apply
+    }
+
+    // ponytail: its own key, not a Settings field — a new field would stop the stored JSON decoding and reset settings
+    private var tapRestore: TapRestore {
+        get { UserDefaults.standard.data(forKey: "tapRestores").flatMap { try? JSONDecoder().decode(TapRestore.self, from: $0) } ?? TapRestore() }
+        set { UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: "tapRestores") }
     }
 
     // MARK: Reconcile
