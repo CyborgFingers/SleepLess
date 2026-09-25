@@ -6,7 +6,14 @@
   <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-1E1A52">
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-arm64-3A2668">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-E2624F">
-  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-FFB35A"></a>
+  <a href="https://github.com/CyborgFingers/SleepLess/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?color=3A2668&label=release"></a>
+  <a href="LICENSE"><img alt="AGPL-3.0 license" src="https://img.shields.io/badge/license-AGPL--3.0-FFB35A"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg"><img alt="Download SleepLess for Mac" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?style=for-the-badge&label=Download%20for%20Mac&color=E2624F"></a>
+  <br>
+  <sub>macOS 13+ · Apple Silicon · free & open source · made by <a href="https://github.com/CyborgFingers">CyborgFingers</a></sub>
 </p>
 
 **SleepLess** is a tiny macOS menu-bar app that keeps your Mac awake — with the lid open (optionally dimming the screen) *or* with the lid closed — with sensible safety cut-offs, an auto-off timer, and a helper that can never leave your Mac stuck awake.
@@ -66,13 +73,25 @@ The app also reads the live `SleepDisabled` flag, so the panel shows whether lid
 | Auto-off timer with countdown | `-t` seconds | ✓ | ✓ |
 | Watchdog restores sleep if the app dies | n/a | ✓ | ✓ |
 | Root helper | none | XPC daemon via `SMAppService` | shell script via launchd, one password prompt |
-| Signed & notarized download, auto-updates | | ✓ | build from source |
+| Download | | notarized DMG, auto-updates | DMG (not yet notarized) or build from source |
 
 If you want a mature, feature-rich alternative with a notarized download, [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704) is the well-known one.
 
 ## Install
 
-Build from source — there are no binary releases. You need Xcode or the Command Line Tools (`xcode-select --install`) on an Apple Silicon Mac running macOS 13 or later.
+### Download (easiest)
+
+1. **[Download SleepLess.dmg](https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg)** — always the latest release ([all releases](https://github.com/CyborgFingers/SleepLess/releases)).
+2. Open it and drag **SleepLess** into **Applications**.
+3. Open SleepLess from Applications. It isn't notarized by Apple yet, so the first launch needs one extra step:
+   - **macOS 15 Sequoia or later:** macOS says it can't verify the app — click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to SleepLess.
+   - **macOS 13–14:** right-click (or ⌃-click) SleepLess in Applications, choose **Open**, then **Open** again.
+
+   You only do this once. Requires an Apple Silicon Mac running macOS 13 or later.
+
+### Build from source
+
+You need Xcode or the Command Line Tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/CyborgFingers/SleepLess.git
@@ -80,7 +99,7 @@ cd SleepLess
 ./build.sh install   # builds build/SleepLess.app, copies it to /Applications and launches it
 ```
 
-`./build.sh` on its own just builds `build/SleepLess.app`. The app is ad-hoc signed; because you build it on your own Mac there is no download quarantine and no Gatekeeper prompt.
+`./build.sh` on its own just builds `build/SleepLess.app`. The app is ad-hoc signed; because you build it on your own Mac there is no download quarantine and no Gatekeeper prompt. `./make-dmg.sh` builds the drag-to-Applications installer (`build/SleepLess.dmg`) that is attached to each release.
 
 ## First run
 
@@ -121,11 +140,13 @@ Whenever a safety guard turns something off, the panel tells you why.
 
 ## Uninstall
 
+Quit SleepLess, then remove the lid-closed helper (only there if you ever used lid-closed mode; this restores normal sleep):
+
 ```bash
-./build.sh uninstall
+sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall
 ```
 
-This asks for `sudo` to remove the helper (restoring normal sleep), then removes `/Applications/SleepLess.app`. It removes:
+and move `/Applications/SleepLess.app` to the Trash. If you built from source, `./build.sh uninstall` does both. The helper's files are:
 
 - `/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.lid.sh`
 - `/Library/LaunchDaemons/io.github.cyborgfingers.sleepless.lid.plist`
@@ -161,4 +182,4 @@ SleepLess was inspired by [Lidless](https://github.com/nghialuong/Lidless) (MIT)
 
 ## License
 
-[MIT](LICENSE) © 2026 CyborgFingers
+SleepLess is made by **[CyborgFingers](https://github.com/CyborgFingers)** and released under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). © 2026 CyborgFingers.

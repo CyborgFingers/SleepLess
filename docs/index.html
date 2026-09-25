@@ -80,6 +80,9 @@
   .btn.ghost { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none; border: 1px solid rgba(255, 255, 255, .25); }
   .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
   .badges span { font-size: 13px; padding: 5px 10px; border-radius: 999px; background: rgba(255, 255, 255, .12); color: #E6E4FF; }
+  .dl-meta { color: #B4B0E0; font-size: 14px; margin: 12px 0 0; }
+  .dl-meta a, .badges a { color: var(--cream); }
+  ol.muted li { margin: 8px 0; }
 
   .frame { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); background: var(--bg-2); }
   .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
@@ -94,7 +97,7 @@
   figure { margin: 0; }
   pre { background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; overflow-x: auto; font: 14.5px/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin: 0 0 14px; }
   code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .93em; }
-  p code, li code { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
+  p code, li code { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; overflow-wrap: anywhere; }
   ul { padding-left: 20px; } li { margin: 6px 0; }
   .note { border-left: 3px solid var(--sun); padding: 4px 14px; color: var(--muted); font-size: 15.5px; }
   footer { padding: 36px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14.5px; }
@@ -121,10 +124,11 @@
       <p class="tag">Keep your Mac awake — lid open or closed.</p>
       <p class="sub">Free, open-source menu-bar app for macOS 13+ on Apple Silicon.</p>
       <div class="btns">
-        <a class="btn" href="#install">Build &amp; install</a>
+        <a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg">⬇︎ Download for Mac</a>
         <a class="btn ghost" href="https://github.com/CyborgFingers/SleepLess">View on GitHub</a>
       </div>
-      <div class="badges"><span>macOS 13+</span><span>Apple Silicon</span><span>Swift &amp; SwiftUI</span><span>MIT license</span><span>No network, no analytics</span></div>
+      <p class="dl-meta">Version 1.0.0 · DMG · macOS 13+ on Apple Silicon · <a href="#install">install help</a> · <a href="https://github.com/CyborgFingers/SleepLess/releases">all releases</a></p>
+      <div class="badges"><span>By <a href="https://github.com/CyborgFingers">CyborgFingers</a></span><span>Swift &amp; SwiftUI</span><span>AGPL-3.0</span><span>No network, no analytics</span></div>
     </div>
   </div>
 </header>
@@ -190,12 +194,21 @@
 
 <section id="install">
   <div class="wrap">
-    <h2>Build &amp; install</h2>
-    <p class="lead">There are no binary downloads — you build it yourself in a few seconds with Xcode or the Command Line Tools (<code>xcode-select --install</code>).</p>
+    <h2>Download &amp; install</h2>
+    <p class="lead">Grab the installer, drag SleepLess into Applications, and you're done.</p>
+    <p><a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg">⬇︎ Download SleepLess.dmg</a></p>
+    <ol class="muted">
+      <li>Open the DMG and drag <strong>SleepLess</strong> into <strong>Applications</strong>.</li>
+      <li>Open SleepLess from Applications. It isn't notarized by Apple yet, so the first launch needs one extra step:
+        <strong>macOS 15 or later</strong> — when macOS says it can't verify the app, click <em>Done</em>, open <em>System Settings → Privacy &amp; Security</em>, scroll down and click <em>Open Anyway</em>;
+        <strong>macOS 13–14</strong> — right-click SleepLess, choose <em>Open</em>, then <em>Open</em> again. Only the first time.</li>
+    </ol>
+    <h3 style="margin-top: 28px">Or build it from source</h3>
+    <p class="muted">A few seconds with Xcode or the Command Line Tools (<code>xcode-select --install</code>):</p>
 <pre><code>git clone https://github.com/CyborgFingers/SleepLess.git
 cd SleepLess
 ./build.sh install</code></pre>
-    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. Turning on lid-closed mode asks for your password once. <code>./build.sh uninstall</code> removes the helper, restores normal sleep and deletes the app.</p>
+    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. Turning on lid-closed mode asks for your password once. To uninstall, quit SleepLess, run <code>sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall</code> (removes the helper and restores normal sleep) and move the app to the Trash — or <code>./build.sh uninstall</code> from a source checkout.</p>
     <ul class="muted">
       <li><strong>Test it:</strong> <code>SleepLess.app/Contents/MacOS/SleepLess --selftest</code> checks brightness, assertions, battery and the click logic; <code>./test-helper.sh</code> checks the helper's watchdog with a fake <code>pmset</code>.</li>
       <li><strong>Privacy:</strong> no network, no analytics. The helper only ever runs <code>pmset</code>; any process running as your user could write the request file, but the worst case is a Mac that stays awake, and the watchdog still applies.</li>
@@ -206,7 +219,7 @@ cd SleepLess
 
 <footer>
   <div class="wrap">
-    <span>© 2026 CyborgFingers · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">MIT license</a></span>
+    <span>Made by <a href="https://github.com/CyborgFingers">CyborgFingers</a> · © 2026 · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">AGPL-3.0</a> · v1.0.0</span>
     <span>Inspired by <a href="https://github.com/nghialuong/Lidless">Lidless</a> — independent implementation.</span>
     <span><a href="https://github.com/CyborgFingers/SleepLess">Source on GitHub</a></span>
   </div>

@@ -46,6 +46,14 @@ struct Panel: View {
                     .help("Quit SleepLess (⌘Q). Brightness and normal sleep come back straight away.")
             }
             .font(.callout)
+            HStack(spacing: 4) {
+                Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · by")
+                Link("CyborgFingers", destination: URL(string: "https://github.com/CyborgFingers")!)
+                    .help("github.com/CyborgFingers — source, releases and issues at github.com/CyborgFingers/SleepLess")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
         }
         .padding(14)
         .frame(width: 344)
