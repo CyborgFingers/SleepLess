@@ -12,7 +12,7 @@
 **SleepLess** is a tiny macOS menu-bar app that keeps your Mac awake — with the lid open (optionally dimming the screen) *or* with the lid closed — with sensible safety cut-offs, an auto-off timer, and a helper that can never leave your Mac stuck awake.
 
 <p align="center">
-  <img src="assets/menubar-animation.gif" alt="The SleepLess menu-bar icon: a hollow sun on the horizon when off; the sun rises and five rays fan out when it turns on; the sun lifts clear of the horizon in lid-closed mode" width="720">
+  <img src="assets/menubar-animation.gif" alt="The SleepLess menu-bar icon, a screen with a sunrise inside: a hollow sun at the bottom when off; the sun rises and five rays fan out when it turns on; the sun lifts into the middle of the screen in lid-closed mode" width="720">
 </p>
 
 ## Features
@@ -24,7 +24,7 @@
 - **Turn off after** — never, 15 min, 30 min, 1, 2 or 4 hours, with a live countdown and progress bar. When the timer ends everything turns off.
 - **One click on, one click off** — a quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on; screen awake by default) or off. Press and hold the icon, or right-click it, for the settings panel.
 - **Watchdog** — the helper treats a request older than 90 s (app quit, crashed or hung) as "off", so your Mac can never get stuck unable to sleep. Quitting the app restores normal sleep immediately.
-- **Animated menu-bar icon** — the app icon's sunrise in miniature. Off is a hollow sun on the horizon. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts clear of the horizon. It is a template image, so it matches light and dark menu bars; the animation pauses while your screens sleep, and under Reduce Motion it simply switches between still frames.
+- **Animated menu-bar icon** — a screen with the app icon's sunrise inside. Off is a hollow sun resting on the bottom of the screen. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts to the middle of the screen as a full disc. It is a template image, so it matches light and dark menu bars; the animation pauses while your screens sleep, and under Reduce Motion it simply switches between still frames.
 - **Launch at login** (on by default after the first launch) and settings that persist.
 - One panel in the menu bar with a live status header, a card per mode, tooltips on everything and full VoiceOver and keyboard support; it respects Reduce Motion and Increase Contrast. No Dock icon, no network, no analytics.
 
@@ -80,7 +80,7 @@ cd SleepLess
 
 ## First run
 
-- SleepLess lives in the **menu bar** — look for the small sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it (or right-click / ⌃-click) for the settings panel. The panel shows this tip once.
+- SleepLess lives in the **menu bar** — look for the small screen-with-a-sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it (or right-click / ⌃-click) for the settings panel. The panel shows this tip once.
 - It registers itself as a **login item** on first launch (macOS may show a "background items added" notification). Untick *Launch at login* in the panel if you would rather not.
 - The first time you turn on **Keep awake with lid closed**, macOS asks for your **administrator password once** to install the helper. You will not be asked again (unless a future version updates the helper, which the app detects and re-installs with one prompt).
 - If you use **Bartender**, **Ice** or a similar menu-bar organiser, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there.

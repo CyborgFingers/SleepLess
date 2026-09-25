@@ -133,9 +133,9 @@
 <section id="icon">
   <div class="wrap">
     <h2>Lives in your menu bar</h2>
-    <p class="lead">The app icon's sunrise, in miniature. Off is a hollow sun on the horizon. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts clear of the horizon. It is a template image, so it fits light and dark menu bars, and the animation pauses while your screens sleep.</p>
+    <p class="lead">A screen with the app icon's sunrise inside. Off is a hollow sun resting on the bottom of the screen. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts to the middle of the screen as a full disc. It is a template image, so it fits light and dark menu bars, and the animation pauses while your screens sleep.</p>
     <div class="frame" style="max-width: 720px">
-      <img src="assets/menubar-animation.gif" width="720" height="250" alt="Animated SleepLess menu-bar icon on a light and a dark menu bar: a hollow sun when off, the sun rising with rays when on, the sun lifted above the horizon for lid-closed mode, then setting again">
+      <img src="assets/menubar-animation.gif" width="720" height="250" alt="Animated SleepLess menu-bar icon on a light and a dark menu bar: a screen with a hollow sun when off, the sun rising with rays when on, the sun lifted into the middle of the screen for lid-closed mode, then setting again">
     </div>
   </div>
 </section>
@@ -194,7 +194,7 @@
 <pre><code>git clone https://github.com/CyborgFingers/SleepLess.git
 cd SleepLess
 ./build.sh install</code></pre>
-    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. Turning on lid-closed mode asks for your password once. <code>./build.sh uninstall</code> removes the helper, restores normal sleep and deletes the app.</p>
+    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. Turning on lid-closed mode asks for your password once. <code>./build.sh uninstall</code> removes the helper, restores normal sleep and deletes the app.</p>
     <ul class="muted">
       <li><strong>Test it:</strong> <code>SleepLess.app/Contents/MacOS/SleepLess --selftest</code> checks brightness, assertions, battery and the click logic; <code>./test-helper.sh</code> checks the helper's watchdog with a fake <code>pmset</code>.</li>
       <li><strong>Privacy:</strong> no network, no analytics. The helper only ever runs <code>pmset</code>; any process running as your user could write the request file, but the worst case is a Mac that stays awake, and the watchdog still applies.</li>

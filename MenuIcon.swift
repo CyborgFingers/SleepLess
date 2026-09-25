@@ -1,10 +1,11 @@
 import AppKit
 
-/// The menu-bar glyph: the app icon's sunrise. Off is a hollow sun on the horizon. Turning on, the sun climbs in
-/// and five rays fan out centre-first (0.7 s); while it stays on the rays breathe slowly; turning off runs it back
-/// (0.55 s). Lid-closed mode lifts the sun clear of the horizon as a full disc. Frames are only drawn while something
-/// moves (30 fps in a transition, 4 fps breathing), never while the screens are asleep, and Reduce Motion gets one
-/// still frame per state. It is a template image, so macOS tints it for light and dark menu bars.
+/// The menu-bar glyph: a screen with the app icon's sunrise inside. Off is a hollow sun resting on the bottom bezel.
+/// Turning on, the sun climbs in and five rays fan out centre-first (0.7 s); while it stays on the rays breathe
+/// slowly; turning off runs it back (0.55 s). Lid-closed mode lifts the sun to the middle of the screen as a full
+/// disc. Frames are only drawn while something moves (30 fps in a transition, 4 fps breathing), never while the
+/// screens are asleep, and Reduce Motion gets one still frame per state. It is a template image, so macOS tints it
+/// for light and dark menu bars.
 @MainActor final class MenuIcon: ObservableObject {
     /// One drawn frame of the glyph. The panel re-draws the current one at a larger size.
     struct Frame: Equatable {
@@ -110,59 +111,65 @@ import AppKit
 
     /// Template image, `side` points square. The geometry is laid out on an 18-unit grid and every stroke, disc and
     /// centre is snapped to the device pixels of the context it is drawn into, so it stays crisp at 1x, 2x and at the
-    /// panel's larger size.
+    /// panel's larger size. The screen frame is a thinner stroke (1 pt) than the sun (1.5 pt), so the sun stays the hero.
     static func draw(_ f: Frame, side: CGFloat = 18) -> NSImage {
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { _ in
             guard let cg = NSGraphicsContext.current?.cgContext else { return false }
             cg.scaleBy(x: side / 18, y: side / 18)
             let s = max(abs(cg.ctm.a), 0.001)                  // device pixels per grid unit
-            let wPx = max(1, (1.5 * s).rounded())              // 1.5 pt stroke: 2 px at 1x, 3 px at 2x
-            let w = wPx / s, odd = Int(wPx) % 2 == 1
-            let snap = { (v: CGFloat) in odd ? (floor(v * s) + 0.5) / s : (v * s).rounded() / s }   // stroke centre lines
-            let radius = { (v: CGFloat) -> CGFloat in          // a disc whose vertical ray shares the stroke's pixel parity
+            let framePx = max(1, s.rounded()), sunPx = max(1, (1.5 * s).rounded())   // 1 px / 2 px at 1x, 2 px / 3 px at 2x
+            let fw = framePx / s, w = sunPx / s
+            let snap = { (v: CGFloat, px: CGFloat) in Int(px) % 2 == 1 ? (floor(v * s) + 0.5) / s : (v * s).rounded() / s }   // stroke centre lines
+            let radius = { (v: CGFloat) -> CGFloat in          // a disc whose vertical ray shares the sun stroke's pixel parity
                 let d = (2 * v * s).rounded()
-                return (Int(d) % 2 == 1) == odd ? d / (2 * s) : (d - 1) / (2 * s)
+                return (Int(d) % 2 == 1) == (Int(sunPx) % 2 == 1) ? d / (2 * s) : (d - 1) / (2 * s)
+            }
+            let stroke = { (path: NSBezierPath, width: CGFloat) in
+                path.lineWidth = width
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.stroke()
             }
             let line = { (a: NSPoint, b: NSPoint) in
                 let path = NSBezierPath()
                 path.move(to: a)
                 path.line(to: b)
-                path.lineWidth = w
-                path.lineCapStyle = .round
-                path.stroke()
+                stroke(path, w)
             }
 
             NSColor.black.set()
-            let lift = easeInOut(f.sun)
-            let hy = snap(5), cx = snap(9)                     // horizon; the sun and its vertical ray sit on cx
-            line(NSPoint(x: cx - 7, y: hy), NSPoint(x: cx + 7, y: hy))
+            // The screen: a landscape display frame, the same in every state.
+            let x0 = snap(0.5, framePx), x1 = snap(17.5, framePx), y0 = snap(2.5, framePx), y1 = snap(15.5, framePx)
+            stroke(NSBezierPath(roundedRect: NSRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0), xRadius: 2.5, yRadius: 2.5), fw)
+            let left = x0 + fw / 2, right = x1 - fw / 2, bottom = y0 + fw / 2, top = y1 - fw / 2   // inside the bezel
 
-            let r = radius(4.4 - 1.15 * lift)                  // half-disc on the horizon … a smaller full disc above it
-            let cy = hy + lift * (snap(hy + r + 1) - hy)
-            let climb = easeOut(f.rise / 0.6)                  // the sun climbs in over the first 60 % of the sunrise
+            let lift = easeInOut(f.sun), climb = easeOut(f.rise / 0.6)   // the sun climbs in over the first 60 % of the sunrise
+            let cx = snap(9, sunPx)                            // the sun and its vertical ray sit on cx
+            let r = radius(3.75 - lift)                        // half-disc on the bottom bezel … a smaller full disc above it
+            let cyOn = snap(bottom, sunPx), cyLid = snap(bottom + 3.75, sunPx)
+            let cy = cyOn + (cyLid - cyOn) * lift
             NSGraphicsContext.saveGraphicsState()
-            NSBezierPath(rect: NSRect(x: 0, y: hy + w / 2, width: 18, height: 18)).addClip()   // nothing shows below the line
+            NSBezierPath(rect: NSRect(x: left, y: bottom, width: right - left, height: top - bottom)).addClip()   // nothing shows outside the screen
             if climb < 0.999 {                                 // hollow sun = off
-                let ring = NSBezierPath(ovalIn: NSRect(x: cx - r + w / 2, y: cy - r + w / 2, width: 2 * r - w, height: 2 * r - w))
-                ring.lineWidth = w
-                ring.stroke()
+                stroke(NSBezierPath(ovalIn: NSRect(x: cx - r + w / 2, y: cy - r + w / 2, width: 2 * r - w, height: 2 * r - w)), w)
             }
             if climb > 0.001 {
-                let risen = cy - r + r * climb                 // from fully below the line up to its resting height
+                let risen = cy - r + r * climb                 // from fully below the bezel up to its resting height
                 NSBezierPath(ovalIn: NSRect(x: cx - r, y: risen - r, width: 2 * r, height: 2 * r)).fill()
             }
             NSGraphicsContext.restoreGraphicsState()
 
             let breath = 1 - f.shimmer * (1 - cos(f.phase)) / 2
             NSColor(white: 0, alpha: breath).set()
+            let inner = r + 1 + lift, length = 2.25 - 0.25 * lift   // the lifted sun gets more air round it
             for (i, degrees) in rayAngles.enumerated() {
                 let fromCentre = CGFloat(abs(i - 2))          // centre ray first, outer rays last (and first back in)
                 let grow = min(overshoot((f.rise - 0.35 - fromCentre * 0.12) / 0.35), 1.1)
-                let length = (2.5 - 0.25 * lift) * grow
-                guard length > 0.2 else { continue }
-                let angle = degrees * .pi / 180, inner = r + 1.25 + lift          // the lifted sun gets more air round it
+                let ray = length * grow
+                guard ray > 0.2 else { continue }
+                let angle = degrees * .pi / 180
                 let point = { (d: CGFloat) in NSPoint(x: cx + cos(angle) * d, y: cy + sin(angle) * d) }
-                line(point(inner), point(inner + length))
+                line(point(inner), point(inner + ray))
             }
             return true
         }
