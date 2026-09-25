@@ -43,6 +43,7 @@ struct LidDark: Codable, Equatable {
     private var dimmedTo: Float?
     private var lastRequest: (on: Bool, at: Date)?
     private var lastOnAC: Bool?
+    private var keyboardWhileOpen: KeyboardLight.Level?
     private var timer: Timer?
     /// Levels to restore when the lid opens. Persisted, so a crash or quit with the lid shut can't leave the
     /// screen at 0: the next tick (lid open) puts them back.
@@ -148,9 +149,13 @@ struct LidDark: Codable, Equatable {
         // Lid shut while the Mac is kept up: screen and keyboard light go to 0 but the display stays technically
         // awake — a sleeping display trips the "require password" lock, a dark one doesn't, so opening the lid
         // lands straight back in the session. With a monitor plugged in it's ordinary clamshell use: hands off.
-        let darkLid = Power.lidClosed && lidActive && !Display.hasExternal
+        let lidClosed = Power.lidClosed
+        let darkLid = lidClosed && lidActive && !Display.hasExternal
         applyAwake(s.screenOn || darkLid)
         if darkLid { restoreBrightness(); goDark() } else { comeBack(); applyDim() }
+        // macOS zeroes the keyboard backlight the moment the lid shuts, before our next tick sees it — so the
+        // level to restore is the last one read while the lid was still open.
+        if !lidClosed { keyboardWhileOpen = KeyboardLight.get() }
         icon.setLidShut(darkLid)
         applyLid(now)
         icon.show(screen: s.screenOn, lid: s.lidOn)
@@ -187,7 +192,7 @@ struct LidDark: Codable, Equatable {
     /// Saves the screen and keyboard-light levels once, then holds both at 0 — re-applied every tick because
     /// ambient-light adjustment would otherwise creep them back up.
     private func goDark() {
-        if lidDark == nil { lidDark = LidDark(screen: Brightness.get(), keyboard: KeyboardLight.get()) }
+        if lidDark == nil { lidDark = LidDark(screen: Brightness.get(), keyboard: keyboardWhileOpen ?? KeyboardLight.get()) }
         if (Brightness.get() ?? 0) > 0 { Brightness.set(0) }
         if let keyboard = KeyboardLight.get(), keyboard.brightness > 0 || keyboard.auto {
             KeyboardLight.set(.init(brightness: 0, auto: false))
