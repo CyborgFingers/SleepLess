@@ -37,4 +37,4 @@ that release's notes.
 
 ## Contact
 
-Open an issue at <https://github.com/CyborgFingers/SleepLess/issues>.
+Open an issue at <https://github.com/Weta-Technologies/SleepLess/issues>.

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ./make-pkg.sh  ->  build/SleepLess.pkg, the Installer package attached to GitHub releases.
-# Keep the asset name fixed: https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg
+# Keep the asset name fixed: https://github.com/Weta-Technologies/SleepLess/releases/latest/download/SleepLess.pkg
 # (the download button) always serves the newest release.
 #
 # One package, three clicks — Continue, Agree, Install. The app goes into /Applications; pkg/scripts/preinstall quits a

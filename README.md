@@ -6,12 +6,12 @@
   <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-1E1A52">
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-arm64-3A2668">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-E2624F">
-  <a href="https://github.com/CyborgFingers/SleepLess/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?color=3A2668&label=release"></a>
+  <a href="https://github.com/Weta-Technologies/SleepLess/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Weta-Technologies/SleepLess?color=3A2668&label=release"></a>
   <a href="LICENSE"><img alt="Freeware, all rights reserved" src="https://img.shields.io/badge/license-freeware%20%C2%B7%20all%20rights%20reserved-FFB35A"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg"><img alt="Download SleepLess for Mac" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?style=for-the-badge&label=Download%20for%20Mac&color=E2624F"></a>
+  <a href="https://github.com/Weta-Technologies/SleepLess/releases/latest/download/SleepLess.pkg"><img alt="Download SleepLess for Mac" src="https://img.shields.io/github/v/release/Weta-Technologies/SleepLess?style=for-the-badge&label=Download%20for%20Mac&color=E2624F"></a>
   <br>
   <sub>macOS 13+ · Apple Silicon · free · made by <a href="https://github.com/CyborgFingers">CyborgFingers</a></sub>
 </p>
@@ -84,7 +84,7 @@ If you want a mature, feature-rich alternative with a notarized download, [Amphe
 
 ### Download (easiest)
 
-1. **[Download SleepLess.pkg](https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.pkg)** — always the latest release ([all releases](https://github.com/CyborgFingers/SleepLess/releases)).
+1. **[Download SleepLess.pkg](https://github.com/Weta-Technologies/SleepLess/releases/latest/download/SleepLess.pkg)** — always the latest release ([all releases](https://github.com/Weta-Technologies/SleepLess/releases)).
 2. Open it: **Continue**, **Agree** to the licence, **Install**. macOS asks for your password or Touch ID **once**: that puts SleepLess into Applications and sets up its helper, and SleepLess opens in your menu bar with lid-closed mode ready. Nothing asks again — not the app, and not later updates.
 
    The package and the app are Developer ID signed and notarized by Apple (the official builds are signed and notarized by Weta Technologies Limited — see [SECURITY.md](SECURITY.md) for how to check a download), so there is no Gatekeeper step and the app opens without a warning. Requires an Apple Silicon Mac running macOS 13 or later. Running the package again over an installed SleepLess (or a newer one) simply upgrades it; your settings are kept. (The 1.0 release was an unsigned drag-to-Applications DMG: if you still have that one, macOS 15 and later make you allow it under *System Settings → Privacy & Security → Open Anyway* — the package replaces it, and does not.)
@@ -94,7 +94,7 @@ If you want a mature, feature-rich alternative with a notarized download, [Amphe
 You need Xcode or the Command Line Tools (`xcode-select --install`).
 
 ```bash
-git clone https://github.com/CyborgFingers/SleepLess.git
+git clone https://github.com/Weta-Technologies/SleepLess.git
 cd SleepLess
 ./build.sh install   # builds build/SleepLess.app, copies it to /Applications and launches it
 ```
@@ -201,7 +201,7 @@ SleepLess was inspired by [Lidless](https://github.com/nghialuong/Lidless) (MIT)
 
 **SleepLess is copyright © 2026 Weta Technologies Limited. All rights reserved. Developed by Weta Technologies Limited · GitHub: [CyborgFingers](https://github.com/CyborgFingers).**
 
-SleepLess is **freeware**: you may download and use it free of charge on any Macs you own or control, for personal or business use. You may not modify, decompile, redistribute, sell or host it; please share the [official download](https://github.com/CyborgFingers/SleepLess/releases/latest) instead. The source is published so you can see exactly what SleepLess does. It is not open source, and viewing it gives no rights beyond the licence. The installer asks you to accept the licence before installing.
+SleepLess is **freeware**: you may download and use it free of charge on any Macs you own or control, for personal or business use. You may not modify, decompile, redistribute, sell or host it; please share the [official download](https://github.com/Weta-Technologies/SleepLess/releases/latest) instead. The source is published so you can see exactly what SleepLess does. It is not open source, and viewing it gives no rights beyond the licence. The installer asks you to accept the licence before installing.
 
 - [Licence agreement](LICENSE) (governed by New Zealand law)
 - [Privacy policy](PRIVACY.md): SleepLess collects nothing

@@ -55,11 +55,11 @@ struct Panel: View {
             UpdateRows(updater: .shared)
             VStack(spacing: 2) {
                 HStack(spacing: 4) {
-                    Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · by")
+                    Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · GitHub:")
                     Link("CyborgFingers", destination: URL(string: "https://github.com/CyborgFingers")!)
-                        .help("github.com/CyborgFingers — source, releases and issues at github.com/CyborgFingers/SleepLess")
+                        .help("github.com/CyborgFingers — source, releases and issues at github.com/Weta-Technologies/SleepLess")
                     Text("·")
-                    Link("Licence", destination: URL(string: "https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE")!)
+                    Link("Licence", destination: URL(string: "https://github.com/Weta-Technologies/SleepLess/blob/main/LICENSE")!)
                         .help("The SleepLess licence agreement and privacy policy (SleepLess collects nothing).")
                 }
                 Text("© 2026 Weta Technologies Limited · All rights reserved")
