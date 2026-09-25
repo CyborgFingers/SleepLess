@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SleepLess — keep your Mac awake, lid open or closed</title>
-<meta name="description" content="SleepLess is a free, open-source macOS menu-bar app that keeps your Mac awake with the lid open (optionally dimming the screen) or with the lid closed, with safety cut-offs, an auto-off timer and a watchdog.">
+<meta name="description" content="SleepLess is a free macOS menu-bar app that keeps your Mac awake with the lid open (optionally dimming the screen) or with the lid closed, with safety cut-offs, an auto-off timer and a watchdog.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#0E0F2E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SleepLess — keep your Mac awake, lid open or closed">
-<meta property="og:description" content="Free, open-source macOS menu-bar app. Keep the screen on (or dim it), or keep the Mac awake with the lid closed — safely.">
+<meta property="og:description" content="Free macOS menu-bar app. Keep the screen on (or dim it), or keep the Mac awake with the lid closed — safely.">
 <meta property="og:image" content="https://cyborgfingers.github.io/SleepLess/assets/banner.png">
 <meta property="og:url" content="https://cyborgfingers.github.io/SleepLess/">
 <meta name="twitter:card" content="summary_large_image">
@@ -122,13 +122,13 @@
     <div>
       <h1>SleepLess</h1>
       <p class="tag">Keep your Mac awake — lid open or closed.</p>
-      <p class="sub">Free, open-source menu-bar app for macOS 13+ on Apple Silicon.</p>
+      <p class="sub">Free menu-bar app for macOS 13+ on Apple Silicon.</p>
       <div class="btns">
         <a class="btn" href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg">⬇︎ Download for Mac</a>
         <a class="btn ghost" href="https://github.com/CyborgFingers/SleepLess">View on GitHub</a>
       </div>
-      <p class="dl-meta">Version 1.0.0 · DMG · macOS 13+ on Apple Silicon · <a href="#install">install help</a> · <a href="https://github.com/CyborgFingers/SleepLess/releases">all releases</a></p>
-      <div class="badges"><span>By <a href="https://github.com/CyborgFingers">CyborgFingers</a></span><span>Swift &amp; SwiftUI</span><span>AGPL-3.0</span><span>No network, no analytics</span></div>
+      <p class="dl-meta">Version 1.1.0 · DMG · macOS 13+ on Apple Silicon · <a href="#install">install help</a> · <a href="https://github.com/CyborgFingers/SleepLess/releases">all releases</a></p>
+      <div class="badges"><span>By <a href="https://github.com/CyborgFingers">CyborgFingers</a></span><span>Swift &amp; SwiftUI</span><span>Freeware · all rights reserved</span><span>No network, no analytics</span></div>
     </div>
   </div>
 </header>
@@ -175,6 +175,7 @@
         <div class="step"><b>2</b><div>launchd runs the root helper — a short shell script — on every write and every 30 s; it runs <code>pmset -a disablesleep 1|0</code> to match.</div></div>
         <div class="step"><b>3</b><div>A request older than 90 s counts as <code>0</code> — the watchdog. The helper only undoes a <code>SleepDisabled</code> it set itself.</div></div>
         <div class="step"><b>4</b><div>Close the lid (no monitor plugged in) and the app turns the screen and keyboard light down to 0 — without putting the display to sleep, so macOS doesn't lock — while the Mac stays fully awake. Open it and you're straight back where you left off. (Want a password on the way back? Press ⌃⌘Q before closing.)</div></div>
+        <div class="step"><b>5</b><div>The MagSafe charging light switches off while the lid is shut, and comes back in the right colour when you open it — handy in a dark bedroom. (Switch under Safety.)</div></div>
       </div>
     </div>
     <p class="note" style="margin-top: 22px">The panel reads the live <code>SleepDisabled</code> flag, so it shows whether lid-closed mode is really active — and tells you if something else has disabled sleep.</p>
@@ -219,7 +220,7 @@ cd SleepLess
 
 <footer>
   <div class="wrap">
-    <span>Made by <a href="https://github.com/CyborgFingers">CyborgFingers</a> · © 2026 · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">AGPL-3.0</a> · v1.0.0</span>
+    <span>Made by <a href="https://github.com/CyborgFingers">CyborgFingers</a> · © 2026 · All rights reserved · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/LICENSE">Licence</a> · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/CyborgFingers/SleepLess/blob/main/TRADEMARKS.md">Trademarks</a> · v1.1.0</span>
     <span>Inspired by <a href="https://github.com/nghialuong/Lidless">Lidless</a> — independent implementation.</span>
     <span><a href="https://github.com/CyborgFingers/SleepLess">Source on GitHub</a></span>
   </div>

@@ -57,5 +57,8 @@ DEV=""
 
 rm -f build/SleepLess.dmg
 hdiutil convert "$WORK/rw.dmg" -quiet -format ULFO -o build/SleepLess.dmg
+# The licence agreement macOS shows (Agree / Disagree) before the DMG opens.
+python3 assets/make-sla.py LICENSE "$WORK/sla.xml"
+hdiutil udifrez -xml "$WORK/sla.xml" '' -quiet build/SleepLess.dmg
 echo "Built build/SleepLess.dmg (SleepLess $VERSION)"
 shasum -a 256 build/SleepLess.dmg

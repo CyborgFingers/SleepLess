@@ -17,7 +17,7 @@ APP=build/SleepLess.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp Info.plist "$APP/Contents/"
-cp sleepless-helper.sh "$APP/Contents/Resources/"
+cp sleepless-helper.sh LICENSE "$APP/Contents/Resources/"
 clang -O2 -Wall -target arm64-apple-macosx13.0 -o "$APP/Contents/Resources/sleepless-led" sleepless-led.c -framework IOKit -framework CoreFoundation
 [[ -f assets/AppIcon.icns ]] && cp assets/AppIcon.icns "$APP/Contents/Resources/"
 swiftc -O -parse-as-library -target arm64-apple-macosx13.0 *.swift -o "$APP/Contents/MacOS/SleepLess"

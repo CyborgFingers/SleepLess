@@ -48,7 +48,7 @@ ctx.draw(icon, in: CGRect(x: 96, y: 108, width: 424, height: 424))
 // Wordmark + tagline.
 text("SleepLess", rounded(132, weight: .bold), srgb(0xFFFFFF), at: CGPoint(x: 536, y: 318), tracking: -3)
 text("Keep your Mac awake — lid open or closed.", rounded(36, weight: .medium), srgb(0xFFD9A8), at: CGPoint(x: 544, y: 254))
-text("Free, open-source menu-bar app for macOS", rounded(25, weight: .regular), srgb(0xB4B0E0), at: CGPoint(x: 546, y: 206))
+text("Free menu-bar app for macOS · by CyborgFingers", rounded(25, weight: .regular), srgb(0xB4B0E0), at: CGPoint(x: 546, y: 206))
 
 let out = assets.appendingPathComponent("banner.png")
 let dest = CGImageDestinationCreateWithURL(out as CFURL, "public.png" as CFString, 1, nil)!

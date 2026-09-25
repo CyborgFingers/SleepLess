@@ -7,13 +7,13 @@
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-arm64-3A2668">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-E2624F">
   <a href="https://github.com/CyborgFingers/SleepLess/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?color=3A2668&label=release"></a>
-  <a href="LICENSE"><img alt="AGPL-3.0 license" src="https://img.shields.io/badge/license-AGPL--3.0-FFB35A"></a>
+  <a href="LICENSE"><img alt="Freeware, all rights reserved" src="https://img.shields.io/badge/license-freeware%20%C2%B7%20all%20rights%20reserved-FFB35A"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/CyborgFingers/SleepLess/releases/latest/download/SleepLess.dmg"><img alt="Download SleepLess for Mac" src="https://img.shields.io/github/v/release/CyborgFingers/SleepLess?style=for-the-badge&label=Download%20for%20Mac&color=E2624F"></a>
   <br>
-  <sub>macOS 13+ · Apple Silicon · free & open source · made by <a href="https://github.com/CyborgFingers">CyborgFingers</a></sub>
+  <sub>macOS 13+ · Apple Silicon · free · made by <a href="https://github.com/CyborgFingers">CyborgFingers</a></sub>
 </p>
 
 **SleepLess** is a tiny macOS menu-bar app that keeps your Mac awake — with the lid open (optionally dimming the screen) *or* with the lid closed — with sensible safety cut-offs, an auto-off timer, and a helper that can never leave your Mac stuck awake.
@@ -27,6 +27,7 @@
 - **Keep screen awake** (lid open) — holds the same power assertions as `caffeinate -di`: the screen never idle-dims or sleeps and the Mac never idle-sleeps. No admin rights needed.
 - **Screen when idle** — *Stay the same*, or *Dim* to a brightness you choose (0–100 %) after an idle delay (right away, 30 s, 1, 2, 5 or 10 min). Any keyboard or mouse input restores your original brightness instantly; so does turning it off or quitting. It never brightens a screen that is already below the target. The keyboard backlight is left alone.
 - **Keep awake with lid closed** — the only thing that beats lid-close sleep on Apple Silicon is the `SleepDisabled` flag (`sudo pmset -a disablesleep 1`). SleepLess sets it through a tiny root helper that you approve once with your password. Close the lid and the screen and keyboard backlight go dark while everything keeps running; open it and you're right where you left off — no unlock needed.
+- **Charging light off when closed** — in lid-closed mode, closing the lid switches the MagSafe connector's light off (handy in a dark bedroom); opening it gives the light back to macOS in the right colour. On by default; a switch under *Safety* turns it off.
 - **Safety cut-offs** for lid-closed mode, tucked under a *Safety* disclosure with a one-line summary — *Only while charging*, *Pause when running hot* (thermal state serious/critical), a *Low-battery cutoff* slider (default 20 %, 0 = never) and *Turn on when charging* (follows plug/unplug).
 - **Turn off after** — never, 15 min, 30 min, 1, 2 or 4 hours, with a live countdown and progress bar. When the timer ends everything turns off.
 - **One click on, one click off** — a quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on; screen awake by default) or off. Press and hold the icon, or right-click it, for the settings panel.
@@ -55,6 +56,7 @@ Assertions do not stop a MacBook from sleeping when the lid closes. The only rel
 2. launchd runs the helper on every write and every 30 s; the helper runs `pmset -a disablesleep 1` or `0` to match.
 3. **Watchdog:** a request file older than 90 s counts as `0`. If the app crashes or hangs, normal sleep comes back within about two minutes (90 s of staleness plus up to 30 s until the helper's next run). Quitting normally restores it immediately.
 4. The helper only ever undoes a `SleepDisabled` that it set itself (it keeps a marker file), so it will not fight `pmset` or another tool.
+5. **Charging light:** the app writes `off` (lid closed) or `on` (lid open) to `/Library/Application Support/SleepLess/led`; the helper passes only those two words to a tiny tool, [`sleepless-led`](sleepless-led.c), which writes the one SMC key that picks the MagSafe light's colour (`off` = light off; `on` = the colour macOS would show right now, then back to macOS). Each request is applied once, and the watchdog also restores the light if the app dies with it off.
 
 **Dark screen, Mac on, no unlock.** With the lid shut, SleepLess doesn't leave the display lit: it watches the lid sensor (`AppleClamshellState`), and once the lid is closed — with no external monitor connected — it saves your screen and keyboard-backlight levels and turns both down to 0 (pausing the keyboard's ambient-light adjustment). It deliberately does *not* put the display to sleep: a sleeping display trips macOS's "require password" lock, a dark one doesn't. So the Mac stays fully awake, apps, downloads and agents keep running, and when you open the lid your levels come back and you're straight back in your session. With a monitor plugged in it's ordinary clamshell use, and SleepLess leaves the screens alone.
 
@@ -149,6 +151,7 @@ sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh 
 and move `/Applications/SleepLess.app` to the Trash. If you built from source, `./build.sh uninstall` does both. The helper's files are:
 
 - `/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.lid.sh`
+- `/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.led`
 - `/Library/LaunchDaemons/io.github.cyborgfingers.sleepless.lid.plist`
 - `/Library/Application Support/SleepLess/`
 
@@ -172,7 +175,7 @@ runs the helper against a fake `pmset` (no root needed) and checks that a fresh 
 
 - **No network, no analytics, no accounts.** Nothing leaves your Mac.
 - **Brightness** is read and set through the private `DisplayServices` framework (`DisplayServicesGetBrightness` / `DisplayServicesSetBrightness`). Private APIs can change between macOS releases; `--selftest` tells you if they did.
-- **The root helper** is a short, readable shell script. It only ever runs `pmset -g` and `pmset -a disablesleep 0|1`. It is installed by `/bin/sh sleepless-helper.sh install <user>` under a standard macOS admin prompt, and the app checks that the installed copy is byte-for-byte identical to the one in its bundle before trusting it.
+- **The root helper** is a short, readable shell script. It only ever runs `pmset -g` and `pmset -a disablesleep 0|1`, plus `sleepless-led off|on` for the charging light (that tool only ever writes the one SMC key that picks the MagSafe light's colour). It is installed by `/bin/sh sleepless-helper.sh install <user>` under a standard macOS admin prompt, and the app checks that the installed copy is byte-for-byte identical to the one in its bundle before trusting it.
 - **The request file** (`/Library/Application Support/SleepLess/lid`) is owned by your user in a root-owned directory. Any process running as your user could write `1` to it. The impact is limited to keeping the Mac awake (with the lid closed) while that process keeps rewriting the file, and the 90 s watchdog still applies. The helper reads only the first byte.
 - The app is **not sandboxed** (it needs IOKit and the private brightness API) and is ad-hoc signed; you build it yourself.
 
@@ -182,4 +185,14 @@ SleepLess was inspired by [Lidless](https://github.com/nghialuong/Lidless) (MIT)
 
 ## License
 
-SleepLess is made by **[CyborgFingers](https://github.com/CyborgFingers)** and released under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). © 2026 CyborgFingers.
+**SleepLess is copyright © 2026 [CyborgFingers](https://github.com/CyborgFingers). All rights reserved.**
+
+SleepLess is **freeware**: you may download and use it free of charge on any Macs you own or control, for personal or business use. You may not modify, decompile, redistribute, sell or host it; please share the [official download](https://github.com/CyborgFingers/SleepLess/releases/latest) instead. The source is published so you can see exactly what SleepLess does. It is not open source, and viewing it gives no rights beyond the licence. The DMG asks you to accept the licence before it opens.
+
+- [Licence agreement](LICENSE) (governed by New Zealand law)
+- [Privacy policy](PRIVACY.md): SleepLess collects nothing
+- [Trademark policy](TRADEMARKS.md) · [Security policy](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Notices](NOTICE.md)
+
+SleepLess 1.0.0 and the source published before 26 September 2026 were released under the GNU AGPL-3.0; copies of those versions keep that licence.
+
+Apple, Mac, macOS and MagSafe are trademarks of Apple Inc. SleepLess is not affiliated with or endorsed by Apple Inc.
