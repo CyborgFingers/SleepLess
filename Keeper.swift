@@ -36,6 +36,14 @@ struct LidDark: Codable, Equatable {
     @Published private(set) var lidActive = false   // SleepDisabled is really set
     @Published var note: String?                      // why something turned off / failed
     @Published private(set) var helperReady = LidHelper.isReady
+    /// Turn the MagSafe charging light off while the lid is shut (own key: a new Settings field would reset settings).
+    @Published var lightOffWithLid = UserDefaults.standard.object(forKey: "lightOffWithLid") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(lightOffWithLid, forKey: "lightOffWithLid"); tick() }
+    }
+    /// We turned the light off and still owe macOS its normal colour (persisted across relaunches).
+    private var lightOff = UserDefaults.standard.bool(forKey: "lightIsOff") {
+        didSet { UserDefaults.standard.set(lightOff, forKey: "lightIsOff") }
+    }
     let icon = MenuIcon()
 
     private var assertions: [IOPMAssertionID] = []
@@ -151,6 +159,13 @@ struct LidDark: Codable, Equatable {
         // lands straight back in the session. With a monitor plugged in it's ordinary clamshell use: hands off.
         let lidClosed = Power.lidClosed
         let darkLid = lidClosed && lidActive && !Display.hasExternal
+        // MagSafe light off while the lid is shut in lid-closed mode, macOS's normal colour again when it opens.
+        // Only on the change, so it never fights macOS (or JuiceLeft, which drives the light while the lid is open).
+        let wantLightOff = lightOffWithLid && lidClosed && lidActive
+        if helperReady, wantLightOff != lightOff {
+            LidHelper.light(!wantLightOff)
+            lightOff = wantLightOff
+        }
         applyAwake(s.screenOn || darkLid)
         if darkLid { restoreBrightness(); goDark() } else { comeBack(); applyDim() }
         // macOS zeroes the keyboard backlight the moment the lid shuts, before our next tick sees it — so the
@@ -228,6 +243,7 @@ struct LidDark: Codable, Equatable {
     private func shutdown() {
         restoreBrightness()
         comeBack()
+        if helperReady, lightOff { LidHelper.light(true); lightOff = false }
         if helperReady, s.lidOn { LidHelper.request(false) }   // settings stay on, so it resumes next launch
     }
 }

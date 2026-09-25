@@ -128,13 +128,19 @@ enum Power {
 /// the helper applies it and ignores it once it's 90 s stale, so a dead app can't leave the Mac unable to sleep.
 enum LidHelper {
     private static let requestPath = "/Library/Application Support/SleepLess/lid"
+    private static let lightRequestPath = "/Library/Application Support/SleepLess/led"
     private static let installedPath = "/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.lid.sh"
+    private static let installedLightPath = "/Library/PrivilegedHelperTools/io.github.cyborgfingers.sleepless.led"
     private static var bundledPath: String { Bundle.main.path(forResource: "sleepless-helper", ofType: "sh") ?? "" }
+    private static var bundledLightPath: String { Bundle.main.path(forResource: "sleepless-led", ofType: nil) ?? "" }
 
-    /// Installed, same version as this build, and the request file is ours to write.
+    /// Installed, same version as this build (script and light tool), and the request files are ours to write.
     static var isReady: Bool {
-        FileManager.default.contentsEqual(atPath: installedPath, andPath: bundledPath)
-            && FileManager.default.isWritableFile(atPath: requestPath)
+        let files = FileManager.default
+        return files.contentsEqual(atPath: installedPath, andPath: bundledPath)
+            && files.contentsEqual(atPath: installedLightPath, andPath: bundledLightPath)
+            && files.isWritableFile(atPath: requestPath)
+            && files.isWritableFile(atPath: lightRequestPath)
     }
 
     /// One admin prompt. Returns an error message, or nil on success.
@@ -151,6 +157,12 @@ enum LidHelper {
         // atomically: false — the helper's folder is root-owned, so we rewrite our file in place.
         do { try (on ? "1\n" : "0\n").write(toFile: requestPath, atomically: false, encoding: .utf8) }
         catch { NSLog("SleepLess: lid request failed: \(error)") }
+    }
+
+    /// The MagSafe charging light: off while the lid is shut, back to macOS's normal colour when it opens.
+    static func light(_ on: Bool) {
+        do { try (on ? "on\n" : "off\n").write(toFile: lightRequestPath, atomically: false, encoding: .utf8) }
+        catch { NSLog("SleepLess: light request failed: \(error)") }
     }
 }
 

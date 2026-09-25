@@ -146,6 +146,10 @@ struct SafetyRows: View {
                       subtitle: keeper.helperReady ? "Off again when you unplug" : "Turn lid-closed mode on once first",
                       help: "Turns lid-closed mode on when you plug in and off when you unplug. A manual flip sticks until the next plug or unplug.",
                       isOn: Binding(get: { keeper.s.autoWhenCharging }, set: { keeper.setAutoWhenCharging($0) }))
+            SwitchRow(title: "Charging light off when closed",
+                      subtitle: "Back to normal when you open the lid",
+                      help: "While the lid is shut in lid-closed mode, the MagSafe connector's light turns off; opening the lid gives it back to macOS in the right colour.",
+                      isOn: $keeper.lightOffWithLid)
         }
         .padding(.leading, 18)
         .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
