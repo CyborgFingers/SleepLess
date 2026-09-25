@@ -1,26 +1,31 @@
 import AppKit
 
-/// Lidless-style menu-bar glyph (a lid with a horizon line), animated: rays rise like a sunrise when
-/// SleepLess starts keeping the Mac awake, shimmer while it stays on, and set again when it stops.
-/// A sun comes up over the horizon in lid-closed mode. Frames are only drawn while something moves,
-/// never while the screens are asleep (e.g. lid closed), and never under Reduce Motion (one still frame).
+/// The menu-bar glyph: the app icon's sunrise. Off is a hollow sun on the horizon. Turning on, the sun climbs in
+/// and five rays fan out centre-first (0.7 s); while it stays on the rays breathe slowly; turning off runs it back
+/// (0.55 s). Lid-closed mode lifts the sun clear of the horizon as a full disc. Frames are only drawn while something
+/// moves (30 fps in a transition, 4 fps breathing), never while the screens are asleep, and Reduce Motion gets one
+/// still frame per state. It is a template image, so macOS tints it for light and dark menu bars.
 @MainActor final class MenuIcon: ObservableObject {
     /// One drawn frame of the glyph. The panel re-draws the current one at a larger size.
     struct Frame: Equatable {
-        var rise: CGFloat = 0      // 0 = rays down (off) … 1 = full sunrise
-        var sun: CGFloat = 0       // 0 = below the horizon … 1 = risen (lid-closed mode)
-        var phase: CGFloat = 0     // shimmer wave position
-        var shimmer: CGFloat = 0.15 // shimmer amplitude (fraction of ray length); 0 under Reduce Motion
+        var rise: CGFloat = 0       // 0 = off … 1 = on: sun risen, rays out (the on/off transition's progress)
+        var sun: CGFloat = 0        // 0 = sun on the horizon … 1 = lifted clear of it (lid-closed mode)
+        var phase: CGFloat = 0      // breathing wave position, radians
+        var shimmer: CGFloat = 0.45 // breathing depth: the rays fade to 1 - shimmer at the trough; 0 under Reduce Motion
     }
 
     @Published private(set) var frame = Frame()
     @Published private(set) var image = MenuIcon.draw(Frame())
     private var wantRise: CGFloat = 0, wantSun: CGFloat = 0
+    private var from = Frame(), started = Date.distantPast   // the transition in flight starts from `from` at `started`
     private var screensAsleep = false
     private var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     private var timer: Timer?
-    private static let fps: CGFloat = 20        // sunrise / sunset
-    private static let idleFPS: CGFloat = 6     // ponytail: steady shimmer at 6 fps keeps always-on cost ~1% CPU (15 fps was ~4%)
+
+    static let onDuration: TimeInterval = 0.7, offDuration: TimeInterval = 0.55, lidDuration: TimeInterval = 0.5
+    static let breathPeriod: TimeInterval = 5     // one slow breath of the rays
+    static let fps: Double = 30                   // transitions
+    static let idleFPS: Double = 4                // ponytail: 4 fps breathing ≈ 0.6 % CPU always-on, from the 6 fps ≈ 0.9 % measurement
 
     init() {
         let center = NSWorkspace.shared.notificationCenter
@@ -42,19 +47,22 @@ import AppKit
         guard rise != wantRise || sun != wantSun else { return }
         wantRise = rise
         wantSun = sun
+        from = frame        // a toggle mid-transition turns round from wherever it got to
+        started = Date()
         run()
     }
 
+    private var transitioning: Bool { frame.rise != wantRise || frame.sun != wantSun }
+
     private func run() {
-        if reduceMotion {   // no sunrise, no shimmer: straight to the final frame, no timer
+        if reduceMotion {   // no sunrise, no breathing: straight to the final frame, no timer
             timer?.invalidate()
             timer = nil
             render(Frame(rise: wantRise, sun: wantSun, phase: 0, shimmer: 0))
             return
         }
-        let transitioning = frame.rise != wantRise || frame.sun != wantSun
         let moving = !screensAsleep && (transitioning || wantRise == 1)
-        let interval = 1 / Double(transitioning ? Self.fps : Self.idleFPS)
+        let interval = 1 / (transitioning ? Self.fps : Self.idleFPS)
         if !moving || timer?.timeInterval != interval {
             timer?.invalidate()
             timer = nil
@@ -66,11 +74,16 @@ import AppKit
     }
 
     private func step() {
-        let dt = CGFloat(timer?.timeInterval ?? 1 / Double(Self.fps))
         var next = frame
-        next.rise = Self.approach(next.rise, wantRise, by: dt / 0.8)   // full sunrise in 0.8 s
-        next.sun = Self.approach(next.sun, wantSun, by: dt / 0.5)
-        next.phase += dt * 2 * .pi / 2.4                                // one shimmer wave every 2.4 s
+        if transitioning {   // clock-driven, so timer jitter never stretches the sunrise
+            let duration = wantRise > from.rise ? Self.onDuration : wantRise < from.rise ? Self.offDuration : Self.lidDuration
+            let p = CGFloat(Date().timeIntervalSince(started) / duration)
+            next.rise = p < 1 ? from.rise + (wantRise - from.rise) * p : wantRise   // land exactly, so it settles
+            next.sun = p < 1 ? from.sun + (wantSun - from.sun) * p : wantSun
+            next.phase = 0   // rays at full strength through the transition; the breathing starts from there
+        } else {
+            next.phase = (next.phase + 2 * .pi / (Self.breathPeriod * Self.idleFPS)).truncatingRemainder(dividingBy: 2 * .pi)
+        }
         next.shimmer = Frame().shimmer
         render(next)
         run()   // stops the timer once settled and off
@@ -82,57 +95,73 @@ import AppKit
         image = Self.draw(next)
     }
 
-    private static func approach(_ value: CGFloat, _ target: CGFloat, by step: CGFloat) -> CGFloat {
-        value < target ? min(value + step, target) : max(value - step, target)
-    }
-
-    private static func ease(_ t: CGFloat) -> CGFloat {
-        let t = min(max(t, 0), 1)
-        return t * t * (3 - 2 * t)
-    }
-
     static func draw(rise: CGFloat, sun: CGFloat, phase: CGFloat) -> NSImage {
         draw(Frame(rise: rise, sun: sun, phase: phase))
     }
 
-    /// Template image (macOS tints it for light/dark menu bars), `side` points square. The geometry is laid
-    /// out on an 18 pt grid and scaled, so the panel can draw the same glyph large and crisp.
+    // MARK: Drawing
+
+    private static func clamp(_ t: CGFloat) -> CGFloat { min(max(t, 0), 1) }
+    private static func easeOut(_ t: CGFloat) -> CGFloat { 1 - pow(1 - clamp(t), 3) }
+    private static func easeInOut(_ t: CGFloat) -> CGFloat { let t = clamp(t); return t < 0.5 ? 2 * t * t : 1 - pow(2 - 2 * t, 2) / 2 }
+    private static func overshoot(_ t: CGFloat) -> CGFloat { let u = clamp(t) - 1; return 1 + u * u * (2.4 * u + 1.4) }   // ease-out-back
+
+    private static let rayAngles: [CGFloat] = [25, 57.5, 90, 122.5, 155]   // the app icon's five-ray fan, degrees
+
+    /// Template image, `side` points square. The geometry is laid out on an 18-unit grid and every stroke, disc and
+    /// centre is snapped to the device pixels of the context it is drawn into, so it stays crisp at 1x, 2x and at the
+    /// panel's larger size.
     static func draw(_ f: Frame, side: CGFloat = 18) -> NSImage {
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { _ in
-            NSGraphicsContext.current?.cgContext.scaleBy(x: side / 18, y: side / 18)
-            NSColor.black.set()
-            let line = { (from: NSPoint, to: NSPoint) in
+            guard let cg = NSGraphicsContext.current?.cgContext else { return false }
+            cg.scaleBy(x: side / 18, y: side / 18)
+            let s = max(abs(cg.ctm.a), 0.001)                  // device pixels per grid unit
+            let wPx = max(1, (1.5 * s).rounded())              // 1.5 pt stroke: 2 px at 1x, 3 px at 2x
+            let w = wPx / s, odd = Int(wPx) % 2 == 1
+            let snap = { (v: CGFloat) in odd ? (floor(v * s) + 0.5) / s : (v * s).rounded() / s }   // stroke centre lines
+            let radius = { (v: CGFloat) -> CGFloat in          // a disc whose vertical ray shares the stroke's pixel parity
+                let d = (2 * v * s).rounded()
+                return (Int(d) % 2 == 1) == odd ? d / (2 * s) : (d - 1) / (2 * s)
+            }
+            let line = { (a: NSPoint, b: NSPoint) in
                 let path = NSBezierPath()
-                path.move(to: from)
-                path.line(to: to)
-                path.lineWidth = 1.5
+                path.move(to: a)
+                path.line(to: b)
+                path.lineWidth = w
                 path.lineCapStyle = .round
                 path.stroke()
             }
-            let lid = NSBezierPath(roundedRect: NSRect(x: 1.75, y: 1.75, width: 14.5, height: 14.5), xRadius: 4.5, yRadius: 4.5)
-            lid.lineWidth = 1.5
-            lid.stroke()
 
-            let horizon = NSPoint(x: 9, y: 5)
-            line(NSPoint(x: 5.5, y: horizon.y), NSPoint(x: 12.5, y: horizon.y))
+            NSColor.black.set()
+            let lift = easeInOut(f.sun)
+            let hy = snap(5), cx = snap(9)                     // horizon; the sun and its vertical ray sit on cx
+            line(NSPoint(x: cx - 7, y: hy), NSPoint(x: cx + 7, y: hy))
 
-            if f.sun > 0.01 {   // a disc climbing up from behind the horizon
-                let r: CGFloat = 2.3, centerY = horizon.y - r * (1 - ease(f.sun))
-                NSGraphicsContext.saveGraphicsState()
-                NSBezierPath(rect: NSRect(x: 0, y: horizon.y, width: 18, height: 18)).addClip()
-                NSBezierPath(ovalIn: NSRect(x: horizon.x - r, y: centerY - r, width: 2 * r, height: 2 * r)).fill()
-                NSGraphicsContext.restoreGraphicsState()
+            let r = radius(4.4 - 1.15 * lift)                  // half-disc on the horizon … a smaller full disc above it
+            let cy = hy + lift * (snap(hy + r + 1) - hy)
+            let climb = easeOut(f.rise / 0.6)                  // the sun climbs in over the first 60 % of the sunrise
+            NSGraphicsContext.saveGraphicsState()
+            NSBezierPath(rect: NSRect(x: 0, y: hy + w / 2, width: 18, height: 18)).addClip()   // nothing shows below the line
+            if climb < 0.999 {                                 // hollow sun = off
+                let ring = NSBezierPath(ovalIn: NSRect(x: cx - r + w / 2, y: cy - r + w / 2, width: 2 * r - w, height: 2 * r - w))
+                ring.lineWidth = w
+                ring.stroke()
             }
+            if climb > 0.001 {
+                let risen = cy - r + r * climb                 // from fully below the line up to its resting height
+                NSBezierPath(ovalIn: NSRect(x: cx - r, y: risen - r, width: 2 * r, height: 2 * r)).fill()
+            }
+            NSGraphicsContext.restoreGraphicsState()
 
-            let origin = NSPoint(x: 9, y: 6.25)   // rays fan out from just above the horizon, clear of its ends
-            for (i, degrees) in [155.0, 122, 90, 58, 25].enumerated() {
-                let fromCenter = CGFloat(abs(i - 2))                              // centre ray rises first, sets last
-                let grow = ease((f.rise - fromCenter * 0.2) / 0.6)
-                let shimmer = 1 - f.shimmer + f.shimmer * sin(f.phase - CGFloat(i) * 0.9)   // a wave running across the rays
-                let length = 2.4 * grow * shimmer
-                guard length > 0.15 else { continue }
-                let angle = degrees * .pi / 180, inner: CGFloat = 3.2
-                let point = { (r: CGFloat) in NSPoint(x: origin.x + cos(angle) * r, y: origin.y + sin(angle) * r) }
+            let breath = 1 - f.shimmer * (1 - cos(f.phase)) / 2
+            NSColor(white: 0, alpha: breath).set()
+            for (i, degrees) in rayAngles.enumerated() {
+                let fromCentre = CGFloat(abs(i - 2))          // centre ray first, outer rays last (and first back in)
+                let grow = min(overshoot((f.rise - 0.35 - fromCentre * 0.12) / 0.35), 1.1)
+                let length = (2.5 - 0.25 * lift) * grow
+                guard length > 0.2 else { continue }
+                let angle = degrees * .pi / 180, inner = r + 1.25 + lift          // the lifted sun gets more air round it
+                let point = { (d: CGFloat) in NSPoint(x: cx + cos(angle) * d, y: cy + sin(angle) * d) }
                 line(point(inner), point(inner + length))
             }
             return true

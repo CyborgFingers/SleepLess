@@ -92,7 +92,7 @@ struct StatusHeader: View {
     }
 }
 
-/// Whether the panel is on screen. The status item flips it, so the live glyph only follows the 6 fps
+/// Whether the panel is on screen. The status item flips it, so the live glyph only follows the 4 fps
 /// menu-bar animation while the popover is open (the hidden panel costs nothing).
 private struct PanelVisibleKey: EnvironmentKey { static let defaultValue = true }
 extension EnvironmentValues {

@@ -1,6 +1,6 @@
 // Renders the SleepLess app icon: `swift assets/make-icon.swift`
 // Writes assets/icon-1024.png, assets/icon-512.png and assets/AppIcon.icns (via iconutil).
-// Same glyph language as MenuIcon.swift: a rounded lid, a horizon line, a sun coming up with rays.
+// Same glyph as MenuIcon.swift: a sun coming up over a horizon line, with five rays.
 import AppKit
 
 let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
