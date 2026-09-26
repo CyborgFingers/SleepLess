@@ -4,7 +4,6 @@ SleepLess is copyright (c) 2026 Weta Technologies Limited. All rights reserved. 
 
 ## Acknowledgements
 
-- The MagSafe light values were learned from the public documentation of **PhoSignal** and **magsafe-dark**; no code from either is included.
 - Built with Apple's system frameworks (AppKit, SwiftUI, IOKit).
 
 ## Trademarks
