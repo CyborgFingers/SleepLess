@@ -11,6 +11,7 @@ import IOKit.pwr_mgt
 
     init() {
         if CommandLine.arguments.contains("--selftest") { selfTest() }
+        if CommandLine.arguments.contains("--selftest-hardware") { hardwareSelfTest() }
         if let i = CommandLine.arguments.firstIndex(of: "--shots"), i + 1 < CommandLine.arguments.count { Shots.run(dir: CommandLine.arguments[i + 1]) }
     }
 
@@ -43,9 +44,42 @@ import IOKit.pwr_mgt
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
 
-/// `SleepLess.app/Contents/MacOS/SleepLess --selftest` checks the OS hooks still work after macOS updates
-/// (briefly nudges brightness) and the pure menu-bar click logic. The root helper is covered by test-helper.sh.
+/// `SleepLess.app/Contents/MacOS/SleepLess --selftest` is side-effect-free: it reads (brightness, battery) and checks
+/// every pure part — the menu-bar click logic, the updater's parsing and signing, settings migration, the timer
+/// clock, schedules, automations, the URL scheme. Nothing on the Mac changes. The root helper is covered by
+/// test-helper.sh; `--selftest-hardware` (below) is the one that touches real hardware.
 private func selfTest() -> Never {
+    precondition(Brightness.get() != nil, "FAIL: can't read built-in brightness")
+    precondition(Power.battery() != nil, "FAIL: can't read the battery")
+
+    // Menu-bar tap: on → off remembering the modes, off → those modes back; first tap = screen awake.
+    let off = Keeper.tapPlan(screenOn: true, lidOn: true, remembered: TapRestore())
+    precondition(!off.screen && !off.lid && off.remember == TapRestore(screen: true, lid: true), "FAIL: tap should turn both modes off and remember them")
+    let back = Keeper.tapPlan(screenOn: false, lidOn: false, remembered: off.remember)
+    precondition(back.screen && back.lid && back.remember == off.remember, "FAIL: tap should bring both modes back")
+    let first = Keeper.tapPlan(screenOn: false, lidOn: false, remembered: TapRestore())
+    precondition(first.screen && !first.lid, "FAIL: first tap should turn screen awake on")
+    let screenOnly = Keeper.tapPlan(screenOn: true, lidOn: false, remembered: TapRestore(screen: true, lid: true))
+    precondition(screenOnly.remember == TapRestore(screen: true, lid: false), "FAIL: tap should remember only what was on")
+
+    // Click decision: quick press = tap, held past the deadline = hold, right/⌃-click = the menu.
+    precondition(StatusItemController.gesture(.leftMouseDown, control: false) { true } == .tap, "FAIL: quick press should be a tap")
+    precondition(StatusItemController.gesture(.leftMouseDown, control: false) { false } == .hold, "FAIL: held press should be a hold")
+    precondition(StatusItemController.gesture(.rightMouseDown, control: false) { true } == .menu, "FAIL: right-click should open the menu")
+    precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .menu, "FAIL: control-click should open the menu")
+
+    Updater.selfTest()   // versions, the release feed, signatures, the swap script on a fake bundle
+    SelfTest.features()  // settings migration, the timer clock, schedules, automations, the URL scheme, the shortcut
+
+    print("PASS: brightness + battery readable, tap/hold logic, updater, settings migration, timer clock, schedules, automations, URL scheme, shortcut labels (SleepDisabled now \(Power.sleepDisabled))")
+    exit(0)
+}
+
+/// `--selftest-hardware` checks the OS hooks still work after a macOS update, and DOES touch the Mac for a second:
+/// it nudges the built-in screen's brightness by 10 % and back, turns the keyboard backlight off and back, and
+/// holds the sleep assertions for an instant. Run it by hand only, never from a script.
+private func hardwareSelfTest() -> Never {
+    print("This nudges your screen brightness by 10 % and the keyboard backlight off and back, for about a second.")
     guard let original = Brightness.get() else { fatalError("FAIL: can't read built-in brightness") }
     let probe: Float = original > 0.5 ? original - 0.1 : original + 0.1
     Brightness.set(probe)
@@ -60,8 +94,10 @@ private func selfTest() -> Never {
     let types = Set(((byPID?.takeRetainedValue() as? [Int: [[String: Any]]])?[Int(getpid())] ?? []).compactMap { $0["AssertType"] as? String })
     ids.forEach { IOPMAssertionRelease($0) }
     precondition(types.isSuperset(of: ["PreventUserIdleDisplaySleep", "PreventUserIdleSystemSleep"]), "FAIL: assertions not registered: \(types)")
+    let systemOnly = Awake.hold(display: false)   // "screen may sleep": the system half alone
+    precondition(systemOnly.count == 1, "FAIL: system-only assertion")
+    systemOnly.forEach { IOPMAssertionRelease($0) }
 
-    precondition(Power.battery() != nil, "FAIL: can't read the battery")
     if let keyboard = KeyboardLight.get() {   // keyboard backlight (lid-shut darkening): 0 and back
         KeyboardLight.set(.init(brightness: 0, auto: false))
         usleep(300_000)
@@ -69,30 +105,6 @@ private func selfTest() -> Never {
         KeyboardLight.set(keyboard)
         precondition(off == 0, "FAIL: keyboard backlight set 0, read \(off)")
     }
-
-    // Menu-bar tap: on → off remembering the modes, off → those modes back; first tap = screen awake.
-    let off = Keeper.tapPlan(screenOn: true, lidOn: true, remembered: TapRestore())
-    precondition(!off.screen && !off.lid && off.remember == TapRestore(screen: true, lid: true), "FAIL: tap should turn both modes off and remember them")
-    let back = Keeper.tapPlan(screenOn: false, lidOn: false, remembered: off.remember)
-    precondition(back.screen && back.lid && back.remember == off.remember, "FAIL: tap should bring both modes back")
-    let first = Keeper.tapPlan(screenOn: false, lidOn: false, remembered: TapRestore())
-    precondition(first.screen && !first.lid, "FAIL: first tap should turn screen awake on")
-    let screenOnly = Keeper.tapPlan(screenOn: true, lidOn: false, remembered: TapRestore(screen: true, lid: true))
-    precondition(screenOnly.remember == TapRestore(screen: true, lid: false), "FAIL: tap should remember only what was on")
-
-    // Click decision: quick press = tap, held past the deadline = hold, right/⌃-click = settings.
-    precondition(StatusItemController.gesture(.leftMouseDown, control: false) { true } == .tap, "FAIL: quick press should be a tap")
-    precondition(StatusItemController.gesture(.leftMouseDown, control: false) { false } == .hold, "FAIL: held press should be a hold")
-    precondition(StatusItemController.gesture(.rightMouseDown, control: false) { true } == .settings, "FAIL: right-click should open settings")
-    precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .settings, "FAIL: control-click should open settings")
-
-    let systemOnly = Awake.hold(display: false)   // "screen may sleep": the system half alone
-    precondition(systemOnly.count == 1, "FAIL: system-only assertion")
-    systemOnly.forEach { IOPMAssertionRelease($0) }
-
-    Updater.selfTest()   // versions, the release feed, signatures, the swap script on a fake bundle
-    SelfTest.features()  // settings migration, the timer clock, schedules, automations, the URL scheme, the shortcut
-
-    print("PASS: brightness + keyboard-light round-trips, display/system sleep assertions, battery, tap/hold logic, updater, settings migration, timer clock, schedules, automations, URL scheme (SleepDisabled now \(Power.sleepDisabled))")
+    print("PASS: brightness + keyboard-light round-trips, display/system and system-only sleep assertions")
     exit(0)
 }
