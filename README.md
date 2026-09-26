@@ -76,7 +76,7 @@ The app also reads the live `SleepDisabled` flag, so the panel shows whether lid
 | Auto-off timer with countdown | `-t` seconds | ✓ | ✓ |
 | Watchdog restores sleep if the app dies | n/a | ✓ | ✓ |
 | Root helper | none | XPC daemon via `SMAppService` | shell script via launchd, one prompt (password or Touch ID), signed self-updates |
-| Download | | notarized DMG, auto-updates | Installer package (not yet notarized), signed in-app updates, or build from source |
+| Download | | notarized DMG, auto-updates | notarized Installer package, signed in-app updates, or build from source |
 
 If you want a mature, feature-rich alternative with a notarized download, [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704) is the well-known one.
 
@@ -207,6 +207,5 @@ SleepLess is **freeware**: you may download and use it free of charge on any Mac
 - [Privacy policy](PRIVACY.md): SleepLess collects nothing
 - [Trademark policy](TRADEMARKS.md) · [Security policy](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Notices](NOTICE.md)
 
-SleepLess 1.0.0 and the source published before 26 September 2026 were released under the GNU AGPL-3.0; copies of those versions keep that licence.
 
 Apple, Mac, macOS and MagSafe are trademarks of Apple Inc. SleepLess is not affiliated with or endorsed by Apple Inc.
