@@ -2,16 +2,17 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// The menu-bar item. A click turns SleepLess on or off; press and hold (or right-click / ⌃-click) opens the
-/// settings popover, which closes on Esc, on a click anywhere else, or on another click on the icon.
+/// The menu-bar item. A click turns SleepLess on or off; press and hold opens the settings popover (closed by Esc,
+/// a click anywhere else, or another click on the icon); right-click / ⌃-click opens the quick menu (StatusMenu).
+/// While a timer runs, the time left can sit beside the icon.
 @MainActor final class StatusItemController {
-    enum Gesture: Equatable { case tap, hold, settings }
+    enum Gesture: Equatable { case tap, hold, menu }
     static let holdDelay: TimeInterval = 0.35
 
-    /// The click decision, kept pure so --selftest can check it: right- or ⌃-click opens settings; a left press
+    /// The click decision, kept pure so --selftest can check it: right- or ⌃-click opens the menu; a left press
     /// is a tap if the button comes up before the hold delay, otherwise a hold.
     nonisolated static func gesture(_ type: NSEvent.EventType, control: Bool, releasedInTime: () -> Bool) -> Gesture {
-        if type == .rightMouseDown || control { return .settings }
+        if type == .rightMouseDown || control { return .menu }
         return releasedInTime() ? .tap : .hold
     }
 
@@ -19,6 +20,7 @@ import SwiftUI
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let host: NSHostingController<AnyView>
+    private var menu: StatusMenu?
     private var sinks: [AnyCancellable] = []
     private var monitors: [Any] = []
 
@@ -34,13 +36,21 @@ import SwiftUI
         button.target = self
         button.action = #selector(clicked)
         button.sendAction(on: [.leftMouseDown, .rightMouseDown])
-        button.setAccessibilityHelp("Click to turn SleepLess on or off. Press and hold, or right-click, for settings.")
+        button.setAccessibilityHelp("Click to turn SleepLess on or off. Press and hold for settings, right-click for the menu.")
+        button.font = .monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
+        // The menu comes off the item a moment after it closes: the chosen item's action is sent after menuDidClose,
+        // and taking the menu away inside it would drop that action.
+        menu = StatusMenu(keeper: keeper, openSettings: { [weak self] in self?.open() },
+                          closed: { [weak self] in DispatchQueue.main.async { MainActor.assumeIsolated { self?.item.menu = nil } } })
         // The glyph, with a small dot at its corner while an update waits in the panel.
         keeper.icon.$image.combineLatest(Updater.shared.$state.map { $0 != .idle && Updater.shared.available != nil }.removeDuplicates())
             .sink { image, update in MainActor.assumeIsolated { button.image = update ? Updater.badged(image) : image } }
             .store(in: &sinks)
-        keeper.$s.map { $0.screenOn || $0.lidOn }.removeDuplicates()
+        keeper.$s.combineLatest(keeper.$reasons).map { $0.screenOn || $0.lidOn || !$1.isEmpty }.removeDuplicates()
             .sink { on in MainActor.assumeIsolated { button.setAccessibilityLabel(on ? "SleepLess: on" : "SleepLess: off") } }
+            .store(in: &sinks)
+        keeper.$menuTitle.removeDuplicates()
+            .sink { title in MainActor.assumeIsolated { button.title = title; button.imagePosition = title.isEmpty ? .imageOnly : .imageLeading } }
             .store(in: &sinks)
 
         let local = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]) { [weak self] event in
@@ -60,7 +70,7 @@ import SwiftUI
     private func sawLocal(_ event: NSEvent) -> Bool {
         guard popover.isShown else { return false }
         if event.type == .keyDown {
-            guard event.keyCode == 53 else { return false }
+            guard event.keyCode == 53, !HotKeys.recording else { return false }   // Esc while recording a shortcut cancels that instead
             close()
             return true
         }
@@ -77,8 +87,17 @@ import SwiftUI
         }
         switch gesture {
         case .tap: keeper.toggleAwake()
-        case .hold, .settings: open()
+        case .hold: open()
+        case .menu: showMenu()
         }
+    }
+
+    /// NSStatusItem pops its menu up on a click when it has one — so it gets one for this click only, and the
+    /// menu's delegate takes it away again when it closes (the click gesture must keep working).
+    private func showMenu() {
+        guard let menu, let button = item.button else { return }
+        item.menu = menu.menu()
+        button.performClick(nil)
     }
 
     private static func panel(_ keeper: Keeper, visible: Bool) -> AnyView {

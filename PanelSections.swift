@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Keep screen awake (lid open), with the dim-when-idle options shown only while it is on.
+/// Keep awake (lid open), with what the screen does when idle shown only while it is on.
 struct ScreenCard: View {
     @ObservedObject var keeper: Keeper
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -9,24 +9,36 @@ struct ScreenCard: View {
     private var animation: Animation? { reduceMotion ? nil : panelEase }
     private var percent: Int { Int((keeper.s.level * 100).rounded()) }
 
+    /// What the screen does when idle: 0 stays on, 1 dims, 2 may sleep (the Mac stays awake either way).
+    private var idle: Binding<Int> {
+        Binding(get: { keeper.s.screenSleeps ? 2 : keeper.s.dims ? 1 : 0 },
+                set: { choice in withAnimation(animation) { var n = keeper.s; n.dims = choice == 1; n.screenSleeps = choice == 2; keeper.s = n } })
+    }
+
+    private var subtitle: String {
+        guard keeper.s.screenOn else { return "Lid open: the Mac never sleeps" }
+        if keeper.s.screenSleeps { return "Screen may sleep, Mac stays awake" }
+        return keeper.s.dims ? "Screen dims when idle, no sleep" : "Screen stays on, no idle sleep"
+    }
+
     var body: some View {
-        ModeCard(title: "Keep screen awake",
-                 subtitle: keeper.s.screenOn ? "Screen stays on, no idle sleep" : "Lid open: the screen never sleeps",
+        ModeCard(title: "Keep awake", subtitle: subtitle,
                  symbol: "sun.max.fill", tint: .orange,
-                 help: "Holds the same power assertions as caffeinate -di: the screen never idle-dims or sleeps and the Mac never idle-sleeps.",
+                 help: "Holds the same power assertions as caffeinate -di: the Mac never idle-sleeps and, unless you let it, neither does the screen.",
                  isOn: Binding(get: { keeper.s.screenOn }, set: { on in withAnimation(animation) { keeper.s.screenOn = on } })) {
             if keeper.s.screenOn {
                 Divider()
                 HStack {
                     Text("When idle").font(.callout).frame(width: 70, alignment: .leading)
-                    Picker("When idle", selection: Binding(get: { keeper.s.dims }, set: { dims in withAnimation(animation) { keeper.s.dims = dims } })) {
-                        Text("Stay the same").tag(false)
-                        Text("Dim").tag(true)
+                    Picker("Screen when idle", selection: idle) {
+                        Text("Stay on").tag(0)
+                        Text("Dim").tag(1)
+                        Text("Sleep").tag(2)
                     }
                     .pickerStyle(.segmented).labelsHidden()
-                    .help("Dim lowers the built-in screen's brightness after a delay with no input. Any key press or mouse move brings it back.")
+                    .help("What the screen does with no input. Stay on: never dims or sleeps. Dim: the built-in screen goes down to a brightness you pick after a delay, and any key press or mouse move brings it back. Sleep: the screen sleeps as usual (overnight downloads, renders) while the Mac stays awake.")
                 }
-                if keeper.s.dims {
+                if keeper.s.dims && !keeper.s.screenSleeps {
                     HStack {
                         Text("Dim to").font(.callout).frame(width: 70, alignment: .leading)
                         Image(systemName: "sun.min").foregroundStyle(.secondary).imageScale(.small)
@@ -93,27 +105,11 @@ struct LidCard: View {
                 }
             }
             Divider()
-            Button {
-                withAnimation(animation) { safetyExpanded.toggle() }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(safetyExpanded ? 90 : 0))
-                        .frame(width: 12)
-                    Text("Safety").font(.callout.weight(.medium))
-                    Text(safetySummary).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
-                        .contentTransition(.opacity)
-                        .animation(animation, value: safetySummary)
-                    Spacer(minLength: 8)
-                    if let battery = keeper.battery { BatteryLabel(battery: battery) }
-                }
-                .contentShape(Rectangle())
+            DisclosureRow(title: "Safety", summary: safetySummary,
+                          help: "Rules that turn lid-closed mode off (or keep it off) to protect your battery and your Mac.",
+                          expanded: $safetyExpanded) {
+                if let battery = keeper.battery { BatteryLabel(battery: battery) }
             }
-            .buttonStyle(.plain)
-            .help("Rules that turn lid-closed mode off (or keep it off) to protect your battery and your Mac.")
-            .accessibilityLabel("Safety rules: \(safetySummary)")
-            .accessibilityValue(safetyExpanded ? "expanded" : "collapsed")
-            .accessibilityAddTraits(.isButton)
             if safetyExpanded { SafetyRows(keeper: keeper) }
         }
     }
@@ -169,41 +165,70 @@ struct SafetyRows: View {
     }
 }
 
-/// Auto-off timer: quick picks plus a live countdown and progress bar while it runs.
+/// The timer: never, a duration, or a time of day — with a progress bar while it runs (the header carries the
+/// countdown) and, while one is set, the option of the time left beside the menu-bar icon.
 struct TimerSection: View {
     @ObservedObject var keeper: Keeper
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private let options = [(0, "Never"), (15, "15 min"), (30, "30 min"), (60, "1 hr"), (120, "2 hr"), (240, "4 hr")]
+    static let durations = [(15, "In 15 minutes"), (30, "In 30 minutes"), (60, "In 1 hour"), (120, "In 2 hours"), (240, "In 4 hours")]
+    private static let atTime = -1
 
     private var animation: Animation? { reduceMotion ? nil : panelEase }
+
+    private var choice: Binding<Int> {
+        Binding(get: { keeper.s.offAtMinute != nil ? Self.atTime : keeper.s.offAfter },
+                set: { value in
+                    withAnimation(animation) {
+                        if value == Self.atTime { keeper.setOffAt(minute: Clock.suggestedMinute(after: Date())) } else { keeper.setOffAfter(value) }
+                    }
+                })
+    }
+
+    private var atMinute: Binding<Date> {
+        Binding(get: { Clock.date(minute: keeper.s.offAtMinute ?? 0) }, set: { keeper.setOffAt(minute: Clock.minute(of: $0)) })
+    }
+
     private var running: ClosedRange<Date>? {
-        guard let offAt = keeper.s.offAt, offAt > .now else { return nil }
-        return offAt.addingTimeInterval(-Double(keeper.s.offAfter * 60))...offAt
+        guard keeper.s.screenOn || keeper.s.lidOn, let offAt = keeper.s.offAt, offAt > .now else { return nil }
+        let from = keeper.s.offFrom ?? offAt.addingTimeInterval(-Double(max(keeper.s.offAfter, 1) * 60))
+        return min(from, offAt)...offAt
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label("Turn off after", systemImage: "timer").font(.callout.weight(.medium))
-                Spacer()
-                if let running {
-                    (Text(timerInterval: running, countsDown: true) + Text(" left"))
-                        .font(.callout).monospacedDigit().foregroundStyle(.secondary)
-                        .accessibilityLabel("Turning everything off in")
-                } else if keeper.s.offAfter > 0 {
-                    Text("Starts when a mode is on").font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Label("Turn off", systemImage: "timer").font(.callout.weight(.medium))
+                Picker("Turn off", selection: choice) {
+                    Text("Never").tag(0)
+                    ForEach(Self.durations, id: \.0) { Text($0.1).tag($0.0) }
+                    Divider()
+                    Text("At a time").tag(Self.atTime)
+                }
+                .labelsHidden().fixedSize()
+                .help("Turns everything you switched on off after this long, or at this time, then normal sleep is back. Picking again restarts the countdown. Automations keep their own hours.")
+                if keeper.s.offAtMinute != nil {
+                    DatePicker("Turn off at", selection: atMinute, displayedComponents: .hourAndMinute)
+                        .labelsHidden().datePickerStyle(.stepperField).fixedSize()
+                        .help("The time of day to turn everything off — today if it is still ahead, otherwise tomorrow.")
+                }
+                Spacer(minLength: 0)
+                if running == nil, keeper.s.hasTimer {
+                    Text("Starts when a mode is on").font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            Picker("Turn off after", selection: Binding(get: { keeper.s.offAfter }, set: { m in withAnimation(animation) { keeper.setOffAfter(m) } })) {
-                ForEach(options, id: \.0) { Text($0.1).tag($0.0) }
-            }
-            .pickerStyle(.segmented).labelsHidden()
-            .help("Turns everything off after this long, then normal sleep is back. Picking a new value restarts the countdown.")
             if let running {
                 ProgressView(timerInterval: running, countsDown: true) { EmptyView() } currentValueLabel: { EmptyView() }
                     .progressViewStyle(.linear).controlSize(.small)
                     .accessibilityHidden(true)
             }
+            if keeper.s.hasTimer {
+                SwitchRow(title: "Time left in the menu bar",
+                          help: "Shows how long is left (1h 12m) beside the menu-bar icon while the timer runs.",
+                          isOn: $keeper.s.timeInMenuBar)
+                    .padding(.leading, 30)
+                    .transition(.opacity)
+            }
         }
+        .animation(animation, value: keeper.s.hasTimer)
     }
 }

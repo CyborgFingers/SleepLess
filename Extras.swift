@@ -146,9 +146,10 @@ struct HotKey: Codable, Equatable {
     private static var ref: EventHotKeyRef?
     private static var handler: EventHandlerRef?
 
-    static func register(_ key: HotKey?) {
+    /// False when macOS refuses the combination (another app or the system already owns it).
+    @discardableResult static func register(_ key: HotKey?) -> Bool {
         if let ref { UnregisterEventHotKey(ref); Self.ref = nil }
-        guard let key else { return }
+        guard let key else { return true }
         if handler == nil {
             var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
             InstallEventHandler(GetApplicationEventTarget(), { _, _, _ in
@@ -159,6 +160,7 @@ struct HotKey: Codable, Equatable {
         let id = EventHotKeyID(signature: OSType(0x534C_5353), id: 1)   // 'SLSS'
         let rc = RegisterEventHotKey(key.keyCode, key.modifiers, id, GetApplicationEventTarget(), 0, &ref)
         if rc != noErr { NSLog("SleepLess: hot key \(key.label) refused (\(rc))"); ref = nil }
+        return rc == noErr
     }
 }
 

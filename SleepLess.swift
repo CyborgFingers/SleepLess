@@ -22,6 +22,7 @@ import IOKit.pwr_mgt
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     private var keeper: Keeper?
     private var statusItem: StatusItemController?
+    private var pending: [Command] = []   // a URL that launched the app arrives before the keeper exists
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if Updater.shared.testRun { return Updater.shared.start() }   // --update-test: only the updater, on a copy of the app
@@ -29,11 +30,14 @@ import IOKit.pwr_mgt
         self.keeper = keeper
         statusItem = StatusItemController(keeper: keeper)
         Updater.shared.start()
+        pending.forEach(keeper.handle)
+        pending = []
     }
 
     /// sleepless://on?minutes=30 and friends (Info.plist registers the scheme); anything Command.parse refuses is dropped.
     func application(_ application: NSApplication, open urls: [URL]) {
-        for command in urls.compactMap(Command.parse) { keeper?.handle(command) }
+        let commands = urls.compactMap(Command.parse)
+        if let keeper { commands.forEach(keeper.handle) } else { pending += commands }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

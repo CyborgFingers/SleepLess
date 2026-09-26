@@ -41,6 +41,8 @@ struct Panel: View {
             ScreenCard(keeper: keeper)
             LidCard(keeper: keeper)
             TimerSection(keeper: keeper)
+            AutomationsSection(keeper: keeper)
+            MoreSection(keeper: keeper)
             Divider()
             HStack {
                 Toggle("Launch at login", isOn: Binding(get: { LoginItem.isOn }, set: { keeper.setLoginItem($0) }))
@@ -78,23 +80,44 @@ struct Panel: View {
     }
 }
 
-/// Big animated glyph, a plain-English sentence about what SleepLess is doing right now, and the main
-/// switch — the same on/off a click on the menu-bar icon does.
+/// Big animated glyph, a plain-English sentence about what SleepLess is doing right now — the mode, the time
+/// left, which automation is holding — and the main switch, the same on/off a click on the menu-bar icon does.
 struct StatusHeader: View {
     @ObservedObject var keeper: Keeper
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var isOn: Bool { keeper.s.screenOn || keeper.s.lidOn }
+    private var isOn: Bool { keeper.isOn }
 
     private var title: String { isOn ? "Keeping your Mac awake" : "Your Mac sleeps normally" }
 
-    private var detail: String {
-        switch (keeper.s.screenOn, keeper.s.lidOn) {
+    /// The mode by hand, or — with nothing on by hand — the automation holding (or paused by a click).
+    private var mode: String {
+        let s = keeper.s
+        switch (s.screenOn, s.lidOn) {
         case (true, true): return "Screen stays on · lid can be closed"
-        case (true, false): return keeper.s.dims ? "Screen stays on, dims when idle" : "Screen stays on"
+        case (true, false): return s.screenSleeps ? "Mac stays awake, screen may sleep" : s.dims ? "Screen stays on, dims when idle" : "Screen stays on"
         case (false, true): return keeper.lidActive ? "Even with the lid closed" : "Starting lid-closed mode…"
-        case (false, false): return "Switch on, or pick a mode below"
+        case (false, false):
+            if !keeper.reasons.isEmpty { return Automation.sentence(keeper.reasons) }
+            if !keeper.paused.isEmpty { return Automation.sentence(keeper.paused, prefix: "Paused while ") }
+            return "Switch on, or pick a mode below"
         }
+    }
+
+    /// The automation holding alongside a mode that is on by hand.
+    private var reason: String { keeper.s.screenOn || keeper.s.lidOn ? Automation.sentence(keeper.reasons, prefix: "while ") : "" }
+
+    private var countdown: ClosedRange<Date>? {
+        guard keeper.s.screenOn || keeper.s.lidOn, let offAt = keeper.s.offAt, offAt > .now else { return nil }
+        return Date.now...offAt
+    }
+
+    /// "Screen stays on · 1:12:05 left · while Zoom is running" — the countdown ticks by itself.
+    private var detail: Text {
+        var text = Text(mode)
+        if let countdown { text = text + Text(" · ") + Text(timerInterval: countdown, countsDown: true) + Text(" left") }
+        if !reason.isEmpty { text = text + Text(" · " + reason) }
+        return text
     }
 
     var body: some View {
@@ -102,10 +125,10 @@ struct StatusHeader: View {
             HeaderGlyph(icon: keeper.icon, isOn: isOn)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline).lineLimit(1)
-                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                detail.font(.caption).foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
             }
             .contentTransition(.opacity)
-            .animation(reduceMotion ? nil : panelEase, value: title + detail)
+            .animation(reduceMotion ? nil : panelEase, value: title + mode + reason)
             .layoutPriority(1)
             Spacer(minLength: 8)
             Toggle("SleepLess", isOn: Binding(get: { isOn }, set: { _ in withAnimation(reduceMotion ? nil : panelEase) { keeper.toggleAwake() } }))
@@ -279,10 +302,12 @@ struct IconTile: View {
     }
 }
 
-/// Title (+ optional subtitle) on the left, a small switch pinned to the right edge.
+/// Title (+ optional subtitle) on the left, a small switch pinned to the right edge. An accent-coloured subtitle
+/// marks a rule that is holding right now.
 struct SwitchRow: View {
     let title: String
     var subtitle: String?
+    var live = false
     let help: String
     @Binding var isOn: Bool
 
@@ -290,10 +315,58 @@ struct SwitchRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).font(.callout)
-                if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
+                if let subtitle {
+                    Text(subtitle).font(.caption).foregroundStyle(live ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 0)
             Toggle(title, isOn: $isOn).labelsHidden().toggleStyle(.switch).controlSize(.small).help(help)
         }
+    }
+}
+
+/// A collapsible section's header: chevron, title, a one-line summary of what is inside (accent-coloured while
+/// the section is doing something right now), and room for something on the right.
+struct DisclosureRow<Trailing: View>: View {
+    let title: String
+    let summary: String
+    var symbol: String?
+    var live = false
+    let help: String
+    @Binding var expanded: Bool
+    @ViewBuilder var trailing: Trailing
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button {
+            withAnimation(reduceMotion ? nil : panelEase) { expanded.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .frame(width: 12)
+                if let symbol { Image(systemName: symbol).foregroundStyle(live ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary)).frame(width: 16) }
+                Text(title).font(.callout.weight(.medium))
+                Text(summary).font(.caption).foregroundStyle(live ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                    .lineLimit(1).truncationMode(.tail)
+                    .contentTransition(.opacity)
+                    .animation(reduceMotion ? nil : panelEase, value: summary)
+                Spacer(minLength: 8)
+                trailing
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel("\(title): \(summary)")
+        .accessibilityValue(expanded ? "expanded" : "collapsed")
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
+extension DisclosureRow where Trailing == EmptyView {
+    init(title: String, summary: String, symbol: String? = nil, live: Bool = false, help: String, expanded: Binding<Bool>) {
+        self.init(title: title, summary: summary, symbol: symbol, live: live, help: help, expanded: expanded) { EmptyView() }
     }
 }

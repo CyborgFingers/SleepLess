@@ -87,7 +87,9 @@ struct LidDark: Codable, Equatable {
         didSet {
             guard s != oldValue else { return }
             save()
-            if s.hotKey != oldValue.hotKey { HotKeys.register(s.hotKey) }
+            if s.hotKey != oldValue.hotKey, !HotKeys.register(s.hotKey), let key = s.hotKey {
+                note = "\(key.label) is taken by macOS or another app — try another shortcut."
+            }
             tick()
         }
     }
