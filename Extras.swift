@@ -45,7 +45,7 @@ enum Clock {
 }
 
 /// `sleepless://on`, `sleepless://on?minutes=30`, `sleepless://on?until=17:30`, `sleepless://off`,
-/// `sleepless://toggle`, `sleepless://lid?on=1` — for Shortcuts, Raycast, scripts (`open "sleepless://on?minutes=30"`).
+/// `sleepless://toggle`, `sleepless://lid?on=1` — for Shortcuts and scripts (`open "sleepless://on?minutes=30"`).
 /// An input boundary: the verb and every parameter are whitelisted, values are clamped, anything else is dropped.
 enum Command: Equatable {
     case on(minutes: Int?, untilMinute: Int?)

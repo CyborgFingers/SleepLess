@@ -1,4 +1,4 @@
-SleepLess is in your menu bar — look for the small screen with a sunrise in it. (If you use Bartender, Ice or a similar menu-bar organiser, it may be tucked away in there.)
+SleepLess is in your menu bar — look for the small screen with a sunrise in it. (If you use a menu-bar organiser app, it may be tucked away in there.)
 
 Click the icon to keep your Mac awake, and again to let it sleep as usual. Press and hold it, or right-click, for the settings panel: keep the screen awake with dimming, keep awake with the lid closed, the safety cut-offs, the auto-off timer and launch at login. The helper is set up, so lid-closed mode is ready to switch on — no more password prompts.
 

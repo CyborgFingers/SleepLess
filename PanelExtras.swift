@@ -197,7 +197,7 @@ struct MoreSection: View {
                             .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .help("From the Shortcuts app (Open URLs), Raycast, Alfred or a shell: open \"sleepless://on?minutes=30\". on turns SleepLess on — with a duration or until a time (24-hour clock) — off turns it off, toggle flips it, lid?on=1 or 0 switches lid-closed mode. Nothing else is accepted.")
+                    .help("From the Shortcuts app (Open URLs), another app or a shell: open \"sleepless://on?minutes=30\". on turns SleepLess on — with a duration or until a time (24-hour clock) — off turns it off, toggle flips it, lid?on=1 or 0 switches lid-closed mode. Nothing else is accepted.")
                 }
                 .padding(.leading, 18)
                 .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
