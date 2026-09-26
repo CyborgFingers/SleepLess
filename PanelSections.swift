@@ -64,7 +64,7 @@ struct LidCard: View {
         switch (keeper.s.lidOn, keeper.lidActive) {
         case (true, true): return "Close the lid: screen goes dark, Mac keeps running"
         case (true, false): return "Starting…"
-        case (false, true): return "Sleep is already disabled by something else (pmset? Lidless?)"
+        case (false, true): return "Sleep is already turned off by another app or setting"
         case (false, false): return keeper.helperReady ? "Lid closed: sleeps as usual" : keeper.helperUpdating ? "Updating the helper…" : "Needs the one-time setup"
         }
     }

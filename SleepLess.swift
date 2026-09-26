@@ -1,8 +1,8 @@
 import SwiftUI
 import IOKit.pwr_mgt
 
-// SleepLess — Lidless plus the lid-open case: keep the screen on (optionally dimmed) and/or keep the Mac
-// awake with the lid closed, with Lidless's safety cut-offs, auto-off timer and launch at login.
+// SleepLess — keep the screen on (optionally dimmed) and/or keep the Mac awake with the lid closed, with
+// safety cut-offs, an auto-off timer and launch at login.
 // The menu-bar item lives in StatusItem.swift, the panel UI in Panel.swift / PanelSections.swift.
 
 @main struct SleepLessApp: App {

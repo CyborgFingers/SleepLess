@@ -8,8 +8,8 @@ struct Settings: Codable, Equatable {
     var dims = false                // when idle: dim instead of staying the same
     var level = 0.2                 // dim-to brightness, 0...1
     var delay = 60                  // idle seconds before dimming; 0 = right away
-    var lidOn = false               // keep awake with lid closed (Lidless mode)
-    var onlyWhileCharging = false   // lid-mode safety, same defaults as Lidless
+    var lidOn = false               // keep awake with lid closed
+    var onlyWhileCharging = false   // lid-mode safety
     var pauseWhenHot = true
     var batteryCutoff = 20          // %, 0 = never
     var autoWhenCharging = false
