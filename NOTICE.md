@@ -4,7 +4,6 @@ SleepLess is copyright (c) 2026 Weta Technologies Limited. All rights reserved. 
 
 ## Acknowledgements
 
-- **Lidless** by Nghia Luong (MIT) inspired the lid-closed approach (the SleepDisabled setting), the safety cut-offs and the watchdog idea. SleepLess is an independent implementation; no Lidless code or artwork is included.
 - The MagSafe light values were learned from the public documentation of **PhoSignal** and **magsafe-dark**; no code from either is included.
 - Built with Apple's system frameworks (AppKit, SwiftUI, IOKit).
 
