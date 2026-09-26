@@ -16,7 +16,9 @@ SleepLess is developed and published by Weta Technologies Limited ([CyborgFinger
 
 ## What stays on your Mac
 
-- Your settings, in `~/Library/Preferences/io.github.cyborgfingers.sleepless.plist`.
+- Your settings, in `~/Library/Preferences/io.github.cyborgfingers.sleepless.plist` — including, if you set them up, the apps and schedule your automations use and your keyboard shortcut.
+- Automations check, on your Mac only, which apps are running, whether it is on the power adapter and whether an external display is connected. Nothing about this is stored or sent.
+- `sleepless://` links accept only SleepLess's own commands; nothing is stored or returned.
 - If you use lid-closed mode: two small request files (on/off) in `/Library/Application Support/SleepLess/`, read only by SleepLess's own helper.
 
 This data never leaves your Mac. You can delete it at any time (see the README's Uninstall section).
@@ -24,6 +26,7 @@ This data never leaves your Mac. You can delete it at any time (see the README's
 ## Permissions SleepLess may ask for
 
 - **Administrator password** — only if you turn on lid-closed mode, to install the helper. You can remove it at any time (see the README's Uninstall section).
+- **Notifications** — optional and off until you turn them on; shown on your Mac only.
 - **Login item** — so SleepLess starts when you log in; you can turn this off in the app or in System Settings › General › Login Items.
 
 ## Children
