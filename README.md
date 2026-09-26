@@ -61,24 +61,9 @@ Assertions do not stop a MacBook from sleeping when the lid closes. The only rel
 
 **Dark screen, Mac on, no unlock.** With the lid shut, SleepLess doesn't leave the display lit: it watches the lid sensor (`AppleClamshellState`), and once the lid is closed — with no external monitor connected — it saves your screen and keyboard-backlight levels and turns both down to 0 (pausing the keyboard's ambient-light adjustment). It deliberately does *not* put the display to sleep: a sleeping display trips macOS's "require password" lock, a dark one doesn't. So the Mac stays fully awake, apps, downloads and agents keep running, and when you open the lid your levels come back and you're straight back in your session. With a monitor plugged in it's ordinary clamshell use, and SleepLess leaves the screens alone.
 
-> **Heads-up:** because the screen never "turns off", opening the lid doesn't ask for your password — the same as Lidless. If you want it locked, press ⌃⌘Q before you close the lid (it keeps running either way).
+> **Heads-up:** because the screen never "turns off", opening the lid doesn't ask for your password. If you want it locked, press ⌃⌘Q before you close the lid (it keeps running either way).
 
 The app also reads the live `SleepDisabled` flag, so the panel shows whether lid-closed mode is *really* active, and tells you if something else has disabled sleep.
-
-### Compared with
-
-| | `caffeinate` | [Lidless](https://github.com/nghialuong/Lidless) | SleepLess |
-| --- | :---: | :---: | :---: |
-| Keep the screen on (lid open) | ✓ | | ✓ |
-| Dim the screen while idle | | | ✓ |
-| Keep awake, lid closed (`SleepDisabled`) | | ✓ | ✓ |
-| Safety cut-offs (charging / thermal / battery) | | ✓ | ✓ |
-| Auto-off timer with countdown | `-t` seconds | ✓ | ✓ |
-| Watchdog restores sleep if the app dies | n/a | ✓ | ✓ |
-| Root helper | none | XPC daemon via `SMAppService` | shell script via launchd, one prompt (password or Touch ID), signed self-updates |
-| Download | | notarized DMG, auto-updates | notarized Installer package, signed in-app updates, or build from source |
-
-If you want a mature, feature-rich alternative with a notarized download, [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704) is the well-known one.
 
 ## Install
 
@@ -191,11 +176,7 @@ runs the in-app updater end to end without GitHub: it serves a fake latest-relea
 - **The root helper** is a short, readable shell script. It only ever runs `pmset -g` and `pmset -a disablesleep 0|1`, plus `sleepless-led off|on` for the charging light (that tool only ever writes the one SMC key that picks the MagSafe light's colour). It is installed by `/bin/sh sleepless-helper.sh install <user>` after the system's authorization prompt (Authorization Services, `system.privilege.admin` — the same sheet installers use, with Touch ID where macOS offers it), and the app checks that the installed copy is byte-for-byte identical to the one in its bundle before trusting it.
 - **The helper updates itself only from signed files.** When a new version of SleepLess changes it, the app writes its bundle path to a request file; the root helper copies the files into a root-owned folder first, runs its own root-owned verifier (`sleepless-verify`, compiled from [`tools/helper-verify.swift`](tools/helper-verify.swift)) against the root-owned copy of the publisher key — manifest signature, every file's hash, no downgrade — and only then installs them, each with a rename. Anything else is ignored, and the panel offers the setup card instead. The prompt at setup is therefore the only one there will ever be.
 - **The request file** (`/Library/Application Support/SleepLess/lid`) is owned by your user in a root-owned directory. Any process running as your user could write `1` to it. The impact is limited to keeping the Mac awake (with the lid closed) while that process keeps rewriting the file, and the 90 s watchdog still applies. The helper reads only the first byte.
-- The app is **not sandboxed** (it needs IOKit and the private brightness API) and is ad-hoc signed; you build it yourself.
-
-## Credits
-
-SleepLess was inspired by [Lidless](https://github.com/nghialuong/Lidless) (MIT) — the lid-closed `SleepDisabled` approach, the safety guards, the watchdog idea and the lid-shaped glyph all come from there. SleepLess is an independent implementation with no code or artwork copied, and adds the lid-open, dimming and single-shell-script-helper side.
+- The app is **not sandboxed** (it needs IOKit and the private brightness API) and official builds are Developer ID signed and notarized by Apple.
 
 ## License
 
