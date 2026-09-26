@@ -13,6 +13,10 @@ import IOKit.pwr_mgt
         if CommandLine.arguments.contains("--selftest") { selfTest() }
         if CommandLine.arguments.contains("--selftest-hardware") { hardwareSelfTest() }
         if let i = CommandLine.arguments.firstIndex(of: "--shots"), i + 1 < CommandLine.arguments.count { Shots.run(dir: CommandLine.arguments[i + 1]) }
+        // --appearance dark|light: the live app (menu and panel) in one appearance, for screenshots from a copy.
+        if let i = CommandLine.arguments.firstIndex(of: "--appearance"), i + 1 < CommandLine.arguments.count {
+            NSApp.appearance = NSAppearance(named: CommandLine.arguments[i + 1] == "dark" ? .darkAqua : .aqua)
+        }
     }
 
     var body: some Scene {

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SleepLess — keep your Mac awake, lid open or closed</title>
-<meta name="description" content="SleepLess is a free macOS menu-bar app that keeps your Mac awake with the lid open (optionally dimming the screen) or with the lid closed, with safety cut-offs, an auto-off timer and a watchdog.">
+<meta name="description" content="SleepLess is a free macOS menu-bar app that keeps your Mac awake with the lid open (screen on, dimmed or asleep) or with the lid closed — with automations for apps, power, displays and schedules, a timer that ends after a duration or at a time, a keyboard shortcut, a URL scheme, safety cut-offs and a watchdog.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#0E0F2E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SleepLess — keep your Mac awake, lid open or closed">
-<meta property="og:description" content="Free macOS menu-bar app. Keep the screen on (or dim it), or keep the Mac awake with the lid closed — safely.">
+<meta property="og:description" content="Free macOS menu-bar app. Keep the Mac awake with the lid open or closed — by hand, on a timer, or automatically while an app runs, on power, with a display or on a schedule.">
 <meta property="og:image" content="https://weta-technologies.github.io/SleepLess/assets/banner.png">
 <meta property="og:url" content="https://weta-technologies.github.io/SleepLess/">
 <meta name="twitter:card" content="summary_large_image">
@@ -147,14 +147,15 @@
 <section id="features">
   <div class="wrap">
     <h2>Everything you need, nothing you don't</h2>
-    <p class="lead">One panel, a handful of switches, and guard rails so it never bites you.</p>
+    <p class="lead">One panel, a handful of switches, automations that mind themselves, and guard rails so it never bites you.</p>
     <div class="grid">
-      <div class="card"><div class="icon">☀️</div><h3>Keep screen awake</h3><p>Lid open: the screen never idle-dims or sleeps and the Mac never idle-sleeps — the same assertions as <code>caffeinate -di</code>. No admin rights.</p></div>
-      <div class="card"><div class="icon">🌙</div><h3>Dim while idle</h3><p>Stay the same, or dim to a brightness you pick after 30 s to 10 min. Any key press or mouse move brings your brightness straight back. Never brightens a screen already below the target.</p></div>
+      <div class="card"><div class="icon">☀️</div><h3>Keep awake</h3><p>Lid open: the Mac never idle-sleeps — the same assertions as <code>caffeinate -di</code>. No admin rights. When idle the screen can <em>stay on</em>, <em>dim</em> to a brightness you pick after 30 s to 10 min (any key press brings it straight back), or <em>sleep</em> as usual while the Mac keeps going — for overnight downloads and renders.</p></div>
+      <div class="card"><div class="icon">⚡️</div><h3>Automations</h3><p>Keep awake by itself while an app is running (a call, a presentation, a build), on the power adapter, with an external display, or on a schedule — overnight windows included. All off by default; the status line says which one is holding, and a click pauses it until its reason ends. No polling, no permissions.</p></div>
       <div class="card"><div class="icon">💻</div><h3>Keep awake with lid closed</h3><p>Sets the one flag that beats lid-close sleep on Apple Silicon (<code>SleepDisabled</code>) through a tiny root helper you set up once — one prompt, your password or Touch ID — and that afterwards updates itself only from signed files. Close the lid and the screen and keyboard light go dark while everything keeps running — no unlock when you open it.</p></div>
       <div class="card"><div class="icon">🛡️</div><h3>Safety cut-offs</h3><p>Only while charging. Pause when running hot. Low-battery cutoff (default 20 %). Turn on when you plug in, off when you unplug. All under one <em>Safety</em> disclosure with a one-line summary.</p></div>
-      <div class="card"><div class="icon">⏱️</div><h3>Turn off after</h3><p>15 min to 4 hours with a live countdown and progress bar, then everything turns off and normal sleep is back.</p></div>
-      <div class="card"><div class="icon">👆</div><h3>One click on, one click off</h3><p>A quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on) or off. Press and hold, or right-click, for the settings panel.</p></div>
+      <div class="card"><div class="icon">⏱️</div><h3>Turn off — after, or at a time</h3><p>15 min to 4 hours, or at a time you pick (tomorrow if it has passed). The status line counts down, a progress bar runs, and the time left can sit beside the menu-bar icon. Then everything turns off and normal sleep is back.</p></div>
+      <div class="card"><div class="icon">👆</div><h3>Click, hold, right-click</h3><p>A quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on) or off. Press and hold for the settings panel. Right-click for the quick menu: 15 minutes to 4 hours, until a time, indefinitely.</p></div>
+      <div class="card"><div class="icon">⌨️</div><h3>Shortcut, Shortcuts, scripts</h3><p>Record a keyboard shortcut that works in any app — no Accessibility permission. Drive it from the Shortcuts app, Raycast or a shell with <code>sleepless://on?minutes=30</code>, <code>on?until=17:30</code>, <code>off</code>, <code>toggle</code>. Optional notifications when a timer ends or a safety rule steps in.</p></div>
       <div class="card"><div class="icon">🐕</div><h3>Watchdog</h3><p>If the app crashes or hangs, the helper restores normal sleep within about two minutes; quitting normally restores it immediately. Your Mac can never get stuck unable to sleep.</p></div>
     </div>
   </div>
@@ -185,10 +186,12 @@
 <section id="panel">
   <div class="wrap">
     <h2>The panel</h2>
-    <p class="lead">Press and hold the menu-bar icon (or right-click it). A status header that says what is happening, a card per mode, the safety rules one click away, and a timer with a live countdown. Light or dark, it follows your Mac — and Reduce Motion, Increase Contrast, the keyboard and VoiceOver.</p>
+    <p class="lead">Press and hold the menu-bar icon. A status header that says what is happening — the mode, the time left, which automation is holding — a card per mode, the timer, and the safety rules, automations and extras each one click away behind a one-line summary. Light or dark, it follows your Mac — and Reduce Motion, Increase Contrast, the keyboard and VoiceOver. Right-click the icon for the quick menu.</p>
     <div class="shots">
-      <figure><div class="frame"><img src="assets/panel-light.png" width="800" height="1064" alt="SleepLess panel in light appearance"></div><figcaption>Light</figcaption></figure>
-      <figure><div class="frame"><img src="assets/panel-dark.png" width="800" height="1064" alt="SleepLess panel in dark appearance"></div><figcaption>Dark</figcaption></figure>
+      <figure><div class="frame"><img src="assets/panel-light.png" width="688" height="1148" alt="SleepLess panel in light appearance"></div><figcaption>Light</figcaption></figure>
+      <figure><div class="frame"><img src="assets/panel-dark.png" width="688" height="1148" alt="SleepLess panel in dark appearance"></div><figcaption>Dark</figcaption></figure>
+      <figure><div class="frame"><img src="assets/automations-light.png" width="688" height="1600" alt="The Automations section of the panel, expanded, light appearance"></div><figcaption>Automations</figcaption></figure>
+      <figure><div class="frame" style="max-width: 442px; margin: 0 auto"><img src="assets/menu-light.png" width="884" height="640" alt="The right-click menu on the menu-bar icon: the current state, Turn On, Keep awake for 15 minutes to 4 hours, Until a time, Indefinitely, Settings and Quit"></div><figcaption>The quick menu (right-click)</figcaption></figure>
     </div>
   </div>
 </section>
@@ -207,10 +210,10 @@
 <pre><code>git clone https://github.com/Weta-Technologies/SleepLess.git
 cd SleepLess
 ./build.sh install</code></pre>
-    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it, or right-click, for the settings panel. Built from source, the panel offers a one-time setup for the helper behind lid-closed mode (your password or Touch ID, once — the package does this for you); the helper then updates itself from signed files, and SleepLess itself checks GitHub for updates about once a day and installs them from the panel. To uninstall, quit SleepLess, run <code>sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall</code> (removes the helper and restores normal sleep) and move the app to the Trash — or <code>./build.sh uninstall</code> from a source checkout.</p>
+    <p class="muted">Builds <code>build/SleepLess.app</code>, copies it to <code>/Applications</code> and launches it. Look for the screen-with-a-sunrise icon in the menu bar (if you use Bartender or Ice, or the bar is crowded near the notch, it may be tucked away there). Click it to turn SleepLess on or off; press and hold it for the settings panel; right-click it for the quick menu. Built from source, the panel offers a one-time setup for the helper behind lid-closed mode (your password or Touch ID, once — the package does this for you); the helper then updates itself from signed files, and SleepLess itself checks GitHub for updates about once a day and installs them from the panel. To uninstall, quit SleepLess, run <code>sudo /bin/sh /Applications/SleepLess.app/Contents/Resources/sleepless-helper.sh uninstall</code> (removes the helper and restores normal sleep) and move the app to the Trash — or <code>./build.sh uninstall</code> from a source checkout.</p>
     <ul class="muted">
-      <li><strong>Test it:</strong> <code>SleepLess.app/Contents/MacOS/SleepLess --selftest</code> checks brightness, assertions, battery and the click logic; <code>./test-helper.sh</code> checks the helper's watchdog with a fake <code>pmset</code>.</li>
-      <li><strong>Privacy:</strong> no analytics; the only network activity is the daily update check (a plain request to GitHub, which you can turn off) and the update you start. Updates are Ed25519-signed and verified before anything is unpacked. The helper only ever runs <code>pmset</code>; any process running as your user could write the request file, but the worst case is a Mac that stays awake, and the watchdog still applies.</li>
+      <li><strong>Test it:</strong> <code>SleepLess.app/Contents/MacOS/SleepLess --selftest</code> checks the click logic, settings migration, the timer clock, schedules, automations and the URL scheme without changing anything on the Mac (<code>--selftest-hardware</code> is the one that nudges brightness and the keyboard light for a second); <code>./test-helper.sh</code> checks the helper's watchdog with a fake <code>pmset</code>.</li>
+      <li><strong>Privacy:</strong> no analytics; the only network activity is the daily update check (a plain request to GitHub, which you can turn off) and the update you start. Updates are Ed25519-signed and verified before anything is unpacked. Automations use only what macOS tells every app (running apps, displays, power, the clock), the shortcut is a system hot key rather than an event tap, notifications are sent only if you turn them on, and the URL scheme accepts nothing but its own few verbs. The helper only ever runs <code>pmset</code>; any process running as your user could write the request file, but the worst case is a Mac that stays awake, and the watchdog still applies.</li>
     </ul>
   </div>
 </section>

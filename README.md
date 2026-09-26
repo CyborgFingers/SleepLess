@@ -16,7 +16,7 @@
   <sub>macOS 13+ · Apple Silicon · free · Weta Technologies Limited · GitHub: <a href="https://github.com/CyborgFingers">CyborgFingers</a></sub>
 </p>
 
-**SleepLess** is a tiny macOS menu-bar app that keeps your Mac awake — with the lid open (optionally dimming the screen) *or* with the lid closed — with sensible safety cut-offs, an auto-off timer, and a helper that can never leave your Mac stuck awake.
+**SleepLess** is a tiny macOS menu-bar app that keeps your Mac awake — with the lid open (screen on, dimmed, or allowed to sleep) *or* with the lid closed — with sensible safety cut-offs, a timer that ends after a duration or at a time, automations that keep it awake while an app runs, on power, with a display or on a schedule, a keyboard shortcut, a URL scheme for Shortcuts and scripts, and a helper that can never leave your Mac stuck awake.
 
 <p align="center">
   <img src="assets/menubar-animation.gif" alt="The SleepLess menu-bar icon, a screen with a sunrise inside: a hollow sun at the bottom when off; the sun rises and five rays fan out when it turns on; the sun lifts into the middle of the screen in lid-closed mode" width="720">
@@ -24,30 +24,37 @@
 
 ## Features
 
-- **Keep screen awake** (lid open) — holds the same power assertions as `caffeinate -di`: the screen never idle-dims or sleeps and the Mac never idle-sleeps. No admin rights needed.
-- **Screen when idle** — *Stay the same*, or *Dim* to a brightness you choose (0–100 %) after an idle delay (right away, 30 s, 1, 2, 5 or 10 min). Any keyboard or mouse input restores your original brightness instantly; so does turning it off or quitting. It never brightens a screen that is already below the target. The keyboard backlight is left alone.
+- **Keep awake** (lid open) — holds the same power assertions as `caffeinate -di`: the screen never idle-dims or sleeps and the Mac never idle-sleeps. No admin rights needed.
+- **When idle** — *Stay on*; *Dim* to a brightness you choose (0–100 %) after an idle delay (right away, 30 s, 1, 2, 5 or 10 min), with any keyboard or mouse input restoring your original brightness instantly (it never brightens a screen that is already below the target, and leaves the keyboard backlight alone); or *Sleep* — the screen sleeps as usual while the Mac stays awake (the system half of the assertions alone, like `caffeinate -i`), for overnight downloads, renders and builds.
 - **Keep awake with lid closed** — the only thing that beats lid-close sleep on Apple Silicon is the `SleepDisabled` flag (`sudo pmset -a disablesleep 1`). SleepLess sets it through a tiny root helper that you set up once — one macOS prompt, your password or Touch ID — and that afterwards updates itself only from files signed by Weta Technologies, so nothing ever asks again. Close the lid and the screen and keyboard backlight go dark while everything keeps running; open it and you're right where you left off — no unlock needed.
 - **Charging light off when closed** — in lid-closed mode, closing the lid switches the MagSafe connector's light off (handy in a dark bedroom); opening it gives the light back to macOS in the right colour. On by default; a switch under *Safety* turns it off.
 - **Safety cut-offs** for lid-closed mode, tucked under a *Safety* disclosure with a one-line summary — *Only while charging*, *Pause when running hot* (thermal state serious/critical), a *Low-battery cutoff* slider (default 20 %, 0 = never) and *Turn on when charging* (follows plug/unplug).
-- **Turn off after** — never, 15 min, 30 min, 1, 2 or 4 hours, with a live countdown and progress bar. When the timer ends everything turns off.
-- **One click on, one click off** — a quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on; screen awake by default) or off. Press and hold the icon, or right-click it, for the settings panel.
+- **Turn off** — never, in 15 min, 30 min, 1, 2 or 4 hours, or *at a time* you pick (today if it is still ahead, otherwise tomorrow — DST-safe). The status header counts down, a progress bar runs under the timer, and *Time left in the menu bar* puts the remaining time (1h 12m) beside the icon. When the timer ends everything you switched on turns off; automations keep their own hours.
+- **Automations** — keep the Mac awake by itself *while an app is running* (pick from the apps running now, or any app — a call, a presentation, a build, an export), *on the power adapter*, *with an external display*, or *on a schedule* (days of the week and a window; an end time earlier than the start runs overnight, 0:00 – 0:00 is all day). All off by default, collapsed behind a one-line summary that says which rule is holding right now, and the status header spells it out (*While Zoom is running*). A click on the icon pauses an automation until its reason ends. Event-driven — app launches and quits, displays coming and going — no polling, no permissions.
+- **One click on, one click off** — a quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on; screen awake by default) or off. Press and hold the icon for the settings panel; right-click (or ⌃-click) it for the **quick menu**: what SleepLess is doing, Turn On/Off, *Keep awake for* 15 min – 4 hours / *Until a time…* / *Indefinitely*, Settings… and Quit.
+- **Keyboard shortcut** — record any ⌘, ⌃ or ⌥ combination (or a function key) and it does what a click on the icon does, from any app. A system hot key, so no Accessibility permission.
+- **Notifications** — optional: when a timer ends, or a safety rule turns lid-closed mode off. macOS asks for permission only when you turn it on.
+- **Shortcuts & scripts** — `open "sleepless://on?minutes=30"`, `sleepless://on?until=17:30`, `sleepless://on`, `sleepless://off`, `sleepless://toggle`, `sleepless://lid?on=1` — from the Shortcuts app (*Open URLs*), Raycast, Alfred or a shell. Only those verbs and parameters are accepted; values are clamped and anything else is dropped.
 - **Watchdog** — the helper treats a request older than 90 s (app quit, crashed or hung) as "off", so your Mac can never get stuck unable to sleep. Quitting the app restores normal sleep immediately.
 - **Animated menu-bar icon** — a screen with the app icon's sunrise inside. Off is a hollow sun resting on the bottom of the screen. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts to the middle of the screen as a full disc. It is a template image, so it matches light and dark menu bars; the animation pauses while your screens sleep, and under Reduce Motion it simply switches between still frames.
-- **Launch at login** (on by default after the first launch) and settings that persist.
+- **Launch at login** (on by default after the first launch) and settings that persist — and survive updates: a new version never resets them.
 - **Updates itself** — checks GitHub about once a day (you can turn that off), shows an *Update available* card in the panel and a dot on the icon, and **Update Now** installs the signed update and relaunches with your settings intact. [Details below.](#updates)
-- One panel in the menu bar with a live status header, a card per mode, tooltips on everything and full VoiceOver and keyboard support; it respects Reduce Motion and Increase Contrast. No Dock icon, no analytics, no network beyond the update check.
+- One panel in the menu bar with a live status header (mode · time left · which automation is holding), a card per mode, the timer, and *Automations* and *More* tucked behind one-line summaries; tooltips on everything and full VoiceOver and keyboard support; it respects Reduce Motion and Increase Contrast. No Dock icon, no analytics, no network beyond the update check.
 
 ## Screenshots
 
 | Light | Dark |
 | :---: | :---: |
-| <img src="assets/panel-light.png" alt="SleepLess panel, light appearance" width="376"> | <img src="assets/panel-dark.png" alt="SleepLess panel, dark appearance" width="376"> |
+| <img src="assets/panel-light.png" alt="SleepLess panel, light appearance" width="344"> | <img src="assets/panel-dark.png" alt="SleepLess panel, dark appearance" width="344"> |
+| <img src="assets/automations-light.png" alt="The Automations section expanded, light appearance" width="344"> | <img src="assets/automations-dark.png" alt="The Automations section expanded, dark appearance" width="344"> |
+
+<p align="center"><img src="assets/menu-light.png" alt="The right-click menu on the menu-bar icon: the current state, Turn On, Keep awake for 15 minutes to 4 hours, Until a time, Indefinitely, Settings and Quit" width="442"><br><sub>Right-click (or ⌃-click) the icon for the quick menu.</sub></p>
 
 ## How it works
 
 ### Lid open
 
-*Keep screen awake* creates two IOKit power-management assertions — `PreventUserIdleDisplaySleep` and `PreventUserIdleSystemSleep` — exactly what `caffeinate -di` does. They are released the moment you turn it off or quit. Dimming reads and writes the built-in display's brightness through the same private `DisplayServices` calls the brightness keys use, and watches the idle time of the session to restore it on the first key press or mouse move.
+*Keep awake* creates two IOKit power-management assertions — `PreventUserIdleDisplaySleep` and `PreventUserIdleSystemSleep` — exactly what `caffeinate -di` does (with *Sleep* chosen for the idle screen, only the second one, like `caffeinate -i`). Automations hold the same assertions while their rule is true. They are released the moment you turn it off or quit. Dimming reads and writes the built-in display's brightness through the same private `DisplayServices` calls the brightness keys use, and watches the idle time of the session to restore it on the first key press or mouse move.
 
 ### Lid closed
 
@@ -88,27 +95,29 @@ cd SleepLess
 
 ## First run
 
-- SleepLess lives in the **menu bar** — look for the small screen-with-a-sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it (or right-click / ⌃-click) for the settings panel. The panel shows this tip once.
+- SleepLess lives in the **menu bar** — look for the small screen-with-a-sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it for the settings panel; **right-click** (or ⌃-click) it for the quick menu. The panel shows this tip once.
 - It registers itself as a **login item** on first launch (macOS may show a "background items added" notification). Untick *Launch at login* in the panel if you would rather not.
 - Installed with the package, the helper behind lid-closed mode and the charging light is already set up — the installer's prompt was the one. Built from source, the panel opens with a **one-time setup** card instead: **Set up now** brings one macOS prompt — your password, or Touch ID on Macs that have it — and nothing asks again; **Later** leaves those two features off, each with its own *Set up…* button, until you are ready. (A *Reinstall helper…* link under *Safety* is there if the helper is ever removed.)
 - If you use **Bartender**, **Ice** or a similar menu-bar organiser, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there.
 
 ## Usage
 
-A **quick click** on the menu-bar icon turns SleepLess on or off: on brings back whatever modes you last had on (screen awake the first time), off turns everything off. **Press and hold** the icon, or **right-click** / **⌃-click** it, to open the settings panel; Esc, another click on the icon, or a click anywhere else closes it.
+A **quick click** on the menu-bar icon turns SleepLess on or off: on brings back whatever modes you last had on (screen awake the first time), off turns everything off — and pauses any automation that is holding, until its reason ends. **Press and hold** the icon to open the settings panel; Esc, another click on the icon, or a click anywhere else closes it. **Right-click** (or **⌃-click**) the icon for the quick menu: the current state, Turn On/Off, *Keep awake for* 15 minutes to 4 hours, *Until a time…* (opens the panel with the time picker), *Indefinitely*, Settings… (⌘,) and Quit (⌘Q). The keyboard shortcut you record under *More* is another click on the icon.
 
 | Control | What it does |
 | --- | --- |
-| **Status header** | The big glyph and sentence say what SleepLess is doing right now; its switch is the same on/off as a click on the menu-bar icon. |
-| **Keep screen awake** | Screen stays on and the Mac will not idle-sleep while the lid is open. |
-| **When idle** — *Stay the same* / *Dim* (shown while the mode is on) | With *Dim*, pick the brightness (*Dim to*) and the idle delay (*After*). Brightness returns on the first key press or mouse move. |
+| **Status header** | The big glyph and sentence say what SleepLess is doing right now — the mode, the time left, and which automation is holding (*Screen stays on · 1:12:05 left · while Zoom is running*); its switch is the same on/off as a click on the menu-bar icon. |
+| **Keep awake** | The Mac will not idle-sleep while the lid is open; what the screen does is the next row. |
+| **When idle** — *Stay on* / *Dim* / *Sleep* (shown while the mode is on) | *Stay on*: the screen never dims or sleeps. *Dim*: pick the brightness (*Dim to*) and the idle delay (*After*); brightness returns on the first key press or mouse move. *Sleep*: the screen sleeps as usual, the Mac stays awake. |
 | **Keep awake with lid closed** | Sets `SleepDisabled` through the root helper. Closing the lid turns the screen and keyboard light down to off while the Mac keeps running, without locking. The subtitle shows the real state. |
 | **Safety** (disclosure, with a summary like *Stops at 20 % · Pauses when hot* and the battery level) | The rules below. |
 | **Only while charging** | Lid-closed mode turns off (and refuses to turn on) unless the charger is connected. Disables the battery cutoff, since it is no longer needed. |
 | **Pause when running hot** | Turns lid-closed mode off while the Mac's thermal state is serious or critical. |
 | **Low-battery cutoff** | Turns lid-closed mode off when the battery reaches this level on battery power (default 20 %, 0 = never). |
 | **Turn on when charging** | Turns lid-closed mode on when you plug in and off when you unplug (after the helper has been installed once). A manual flip sticks until the next plug/unplug. |
-| **Turn off after** | *Never*, 15 min – 4 hours: turns *everything* off, with a live countdown and progress bar. Picking a new value restarts the countdown. |
+| **Turn off** | *Never*, *In 15 minutes* – *In 4 hours*, or *At a time* (a time picker appears; today if still ahead, else tomorrow): turns everything you switched on off, with the countdown in the status header and a progress bar. Picking again restarts the countdown. *Time left in the menu bar* shows the remaining time (1h 12m) beside the icon. |
+| **Automations** (disclosure, with a summary like *Zoom, Keynote · Weekdays 9:00 AM – 5:00 PM*, or the rule holding right now) | *While an app is running* — a list of apps with an *Add app* menu of the apps running now (or *Other…* for any app). *On the power adapter*. *With an external display*. *On a schedule* — day buttons and *From* / *to* times (an end at or before the start runs overnight). Each row says when it is keeping the Mac awake, or paused by a click. |
+| **More** (disclosure) | *Keyboard shortcut* — click *Record shortcut*, press the keys (⌘, ⌃ or ⌥ plus a key, or a function key), Esc cancels, × removes it. *Notify me* — when a timer ends or a safety rule turns lid-closed mode off (macOS asks for permission then). *Shortcuts & scripts* — the `sleepless://` commands. |
 | **Launch at login** / **Quit** | Quitting releases the assertions, restores brightness and tells the helper to restore normal sleep straight away. |
 
 Every control has a tooltip, everything works with the keyboard and VoiceOver, and the panel respects Reduce Motion (no shimmer, no transitions) and Increase Contrast.
@@ -154,7 +163,13 @@ If SleepLess is still listed under *System Settings → General → Login Items*
 ./build.sh && build/SleepLess.app/Contents/MacOS/SleepLess --selftest
 ```
 
-checks the brightness round-trip (it briefly nudges brightness by 10 %), that both sleep assertions register, that the battery can be read, the menu-bar click logic (tap / hold / right-click, and what a tap turns on and off), and the updater's pure parts — version ordering (1.10 > 1.9, tags with and without `v`, pre-releases ignored), the release-feed parser, Ed25519 verification with a throwaway key pair (good, tampered, wrong key), and the bundle-swap script on a fake app in a temp folder (a success, and a failure that must put the old app back) — handy after a macOS update, since brightness uses a private API.
+is side-effect-free — it reads (brightness, battery) but changes nothing on the Mac — and checks the menu-bar click logic (tap / hold / right-click, and what a tap turns on and off); the updater's pure parts — version ordering (1.10 > 1.9, tags with and without `v`, pre-releases ignored), the release-feed parser, Ed25519 verification with a throwaway key pair (good, tampered, wrong key), and the bundle-swap script on a fake app in a temp folder (a success, and a failure that must put the old app back); settings migration (a blob exactly as 1.2.1 wrote it keeps every value and takes defaults for the new fields; empty, wrong-typed and newer blobs never reset anything); the timer clock (*at a time* today vs tomorrow, and a DST change that must not add or drop an hour); schedule windows (day boundaries, overnight, all day, a DST day); automations (overlapping reasons in order, the status sentence); the URL scheme against thirty hostile inputs; and the shortcut labels.
+
+```bash
+build/SleepLess.app/Contents/MacOS/SleepLess --selftest-hardware
+```
+
+is the one that **touches the Mac** for about a second — it nudges the screen brightness by 10 % and back, turns the keyboard backlight off and back, and holds the sleep assertions for an instant — to prove the private brightness API and the assertions still work after a macOS update. Run it by hand, never from a script.
 
 ```bash
 ./test-helper.sh
@@ -172,7 +187,11 @@ runs the in-app updater end to end without GitHub: it serves a fake latest-relea
 
 - **No analytics, no accounts.** The only network activity is the [update check](#updates) — a plain request to GitHub for the latest release, about once a day, which you can turn off — and the download you start with Update Now. Nothing about you or your Mac is sent.
 - **Updates are signed.** Every release's `SleepLess.app.zip` carries an Ed25519 signature made with the Weta Technologies publisher key; the app verifies it with the public key compiled in ([`cyborgfingers.pub`](cyborgfingers.pub)) before unpacking, then checks the bundle id, version and code signature of what it unpacked. Nothing from a download ever runs except that verified app.
-- **Brightness** is read and set through the private `DisplayServices` framework (`DisplayServicesGetBrightness` / `DisplayServicesSetBrightness`). Private APIs can change between macOS releases; `--selftest` tells you if they did.
+- **Brightness** is read and set through the private `DisplayServices` framework (`DisplayServicesGetBrightness` / `DisplayServicesSetBrightness`). Private APIs can change between macOS releases; `--selftest-hardware` tells you if they did.
+- **Automations** use only what macOS tells every app anyway — which apps are running (NSWorkspace's launch and quit notifications), whether a display is connected, the power source and the clock. No permission prompts, nothing polled.
+- **The keyboard shortcut** is a system hot key (Carbon `RegisterEventHotKey`), not an event tap: SleepLess sees that one combination and nothing else you type. Recording it refuses plain keys, so a shortcut can never swallow ordinary typing.
+- **Notifications** are sent only if you turn them on, and only for a timer ending or a safety rule turning lid-closed mode off.
+- **The URL scheme** is an input boundary: `sleepless://on|off|toggle|lid` with `minutes=` (1 – 1440), `until=HH:MM` or `on=0|1` and nothing else — unknown verbs, parameters, duplicates, paths and fragments are dropped without doing anything.
 - **The root helper** is a short, readable shell script. It only ever runs `pmset -g` and `pmset -a disablesleep 0|1`, plus `sleepless-led off|on` for the charging light (that tool only ever writes the one SMC key that picks the MagSafe light's colour). It is installed by `/bin/sh sleepless-helper.sh install <user>` after the system's authorization prompt (Authorization Services, `system.privilege.admin` — the same sheet installers use, with Touch ID where macOS offers it), and the app checks that the installed copy is byte-for-byte identical to the one in its bundle before trusting it.
 - **The helper updates itself only from signed files.** When a new version of SleepLess changes it, the app writes its bundle path to a request file; the root helper copies the files into a root-owned folder first, runs its own root-owned verifier (`sleepless-verify`, compiled from [`tools/helper-verify.swift`](tools/helper-verify.swift)) against the root-owned copy of the publisher key — manifest signature, every file's hash, no downgrade — and only then installs them, each with a rename. Anything else is ignored, and the panel offers the setup card instead. The prompt at setup is therefore the only one there will ever be.
 - **The request file** (`/Library/Application Support/SleepLess/lid`) is owned by your user in a root-owned directory. Any process running as your user could write `1` to it. The impact is limited to keeping the Mac awake (with the lid closed) while that process keeps rewriting the file, and the 90 s watchdog still applies. The helper reads only the first byte.
