@@ -85,7 +85,7 @@ struct LidCard: View {
                  isOn: Binding(get: { keeper.s.lidOn }, set: { on in withAnimation(animation) { keeper.setLid(on) } })) {
             if !keeper.helperReady, !keeper.helperUpdating {
                 HStack(spacing: 8) {
-                    Text("Needs SleepLess's helper — your password or Touch ID, once.").font(.caption).foregroundStyle(.secondary)
+                    Text("Your password or Touch ID, once.").font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 6)
                     Button("Set up…") { keeper.setUpHelper() }.controlSize(.small)

@@ -4,4 +4,4 @@ This installer puts SleepLess into your Applications folder and sets up its help
 
 SleepLess then opens in your menu bar. It runs on Apple Silicon Macs with macOS 13 or later. If SleepLess is already running, it is quit and replaced; your settings are kept.
 
-Developed by Weta Technologies Limited · GitHub: CyborgFingers.
+Developed by Weta Technologies Limited.

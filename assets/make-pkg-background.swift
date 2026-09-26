@@ -52,7 +52,7 @@ func draw(dark: Bool) {
     icon.draw(in: NSRect(x: centreX - 54, y: 74, width: 108, height: 108), from: .zero, operation: .sourceOver, fraction: 1)
     NSGraphicsContext.restoreGraphicsState()
     text("SleepLess", rounded(17, .semibold), dark ? cream : night, centreX: centreX, y: 42)
-    text("by CyborgFingers", rounded(11, .medium), (dark ? cream : night).withAlphaComponent(0.7), centreX: centreX, y: 26)
+    text("Weta Technologies Limited", rounded(11, .medium), (dark ? cream : night).withAlphaComponent(0.7), centreX: centreX, y: 26)
 }
 
 for dark in [false, true] {

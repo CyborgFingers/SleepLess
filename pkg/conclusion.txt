@@ -2,4 +2,4 @@ SleepLess is in your menu bar — look for the small screen with a sunrise in it
 
 Click the icon to keep your Mac awake, and again to let it sleep as usual. Press and hold it, or right-click, for the settings panel: keep the screen awake with dimming, keep awake with the lid closed, the safety cut-offs, the auto-off timer and launch at login. The helper is set up, so lid-closed mode is ready to switch on — no more password prompts.
 
-SleepLess checks for updates about once a day and offers them in the panel; you can turn that off there. It is free, from Weta Technologies Limited (GitHub: CyborgFingers); the licence you accepted is also at github.com/Weta-Technologies/SleepLess.
+SleepLess checks for updates about once a day and offers them in the panel; you can turn that off there. It is free, from Weta Technologies Limited; the licence you accepted is also at github.com/Weta-Technologies/SleepLess.

@@ -27,7 +27,7 @@ struct Panel: View {
                     .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
             }
             if !tapHintSeen {
-                Notice(text: "Tip: click the menu-bar icon to turn SleepLess on or off. Hold it, or right-click, for these settings.", kind: .tip) {
+                Notice(text: "Click the menu-bar icon to turn SleepLess on or off. Hold it, or right-click, for these settings.", kind: .tip) {
                     withAnimation(reduceMotion ? nil : panelEase) { tapHintSeen = true }
                 }
                 .transition(.opacity)
@@ -55,14 +55,17 @@ struct Panel: View {
             UpdateRows(updater: .shared)
             VStack(spacing: 2) {
                 HStack(spacing: 4) {
-                    Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · GitHub:")
-                    Link("CyborgFingers", destination: URL(string: "https://github.com/CyborgFingers")!)
-                        .help("github.com/CyborgFingers — source, releases and issues at github.com/Weta-Technologies/SleepLess")
-                    Text("·")
+                    Text("SleepLess \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") ·")
                     Link("Licence", destination: URL(string: "https://github.com/Weta-Technologies/SleepLess/blob/main/LICENSE")!)
-                        .help("The SleepLess licence agreement and privacy policy (SleepLess collects nothing).")
+                        .help("The SleepLess licence agreement (freeware, all rights reserved).")
+                    Text("·")
+                    Link("Privacy", destination: URL(string: "https://github.com/Weta-Technologies/SleepLess/blob/main/PRIVACY.md")!)
+                        .help("The privacy policy: SleepLess collects nothing.")
+                    Text("·")
+                    Link("GitHub", destination: URL(string: "https://github.com/Weta-Technologies/SleepLess")!)
+                        .help("Source, releases and issues on GitHub.")
                 }
-                Text("© 2026 Weta Technologies Limited · All rights reserved")
+                Text("© 2026 Weta Technologies Limited. All rights reserved.")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
