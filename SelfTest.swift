@@ -10,10 +10,13 @@ enum SelfTest {
         automations()
         commands()
         hotKeys()
+        menuBar()
     }
 
     private static func check(_ ok: Bool, _ what: String) {
-        precondition(ok, "FAIL: \(what)")
+        guard !ok else { return }
+        FileHandle.standardError.write("FAIL: \(what)\n".data(using: .utf8)!)   // precondition's message is lost in an -O build
+        exit(1)
     }
 
     private static func decode(_ json: String) -> Settings {
@@ -189,6 +192,27 @@ enum SelfTest {
                        "sleepless://lid", "sleepless://lid?on=maybe", "sleepless://lid?on=1&minutes=5", "sleepless://toggle?x=1", "sleepless://off?minutes=5",
                        "sleepless:on", "sleepless://", "https://on", "file:///etc/passwd", "sleepless://on?minutes=30%0Aopen%20x"]
         for text in hostile { check(parse(text) == nil, "should be refused: \(text)") }
+    }
+
+    /// A full menu bar hides the icon: under the notch, off either edge, not on screen, or no window at all.
+    private static func menuBar() {
+        let screen = CGRect(x: 0, y: 0, width: 1512, height: 982)
+        let notch = CGRect(x: 663, y: 945, width: 185, height: 37)
+        func icon(_ x: CGFloat) -> CGRect { CGRect(x: x, y: 945, width: 36, height: 37) }
+        func hidden(_ x: CGFloat, notch: CGRect? = notch, visible: Bool = true) -> Bool {
+            StatusItemController.iconHidden(item: icon(x), screen: screen, notch: notch, visible: visible)
+        }
+        check(hidden(766), "under the notch (766–802 in a 663–848 notch) is hidden")
+        check(hidden(840), "half under the notch is hidden")
+        check(hidden(628), "overlapping the notch's left edge is hidden")
+        check(!hidden(900), "right of the notch is visible")
+        check(!hidden(600), "left of the notch is visible")
+        check(!hidden(848), "starting where the notch ends is visible")
+        check(hidden(1500), "off the right edge is hidden")
+        check(hidden(-10, notch: nil), "off the left edge is hidden")
+        check(hidden(900, visible: false), "one macOS reports off screen is hidden")
+        check(!hidden(700, notch: nil), "on a screen without a notch, on the bar is visible")
+        check(StatusItemController.iconHidden(item: nil, screen: screen, notch: nil, visible: true), "no window at all is hidden")
     }
 
     private static func hotKeys() {

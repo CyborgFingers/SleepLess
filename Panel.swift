@@ -16,12 +16,20 @@ enum Sunrise {
 
 struct Panel: View {
     @ObservedObject var keeper: Keeper
+    var iconHidden = false   // shown in a floating panel because a full menu bar has hidden the icon
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("tapHintSeen") private var tapHintSeen = false
+    @State private var iconNoteSeen = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             StatusHeader(keeper: keeper)
+            if iconHidden, !iconNoteSeen {
+                Notice(text: "Your menu bar is full, so macOS has hidden SleepLess's icon. Hold ⌘ and drag other icons out of the menu bar to make room.", kind: .tip) {
+                    withAnimation(reduceMotion ? nil : panelEase) { iconNoteSeen = true }
+                }
+                .transition(.opacity)
+            }
             if let note = keeper.note {
                 Notice(text: note, kind: note.hasPrefix("Timer finished") ? .info : .warning) { keeper.note = nil }
                     .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))

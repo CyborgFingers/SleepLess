@@ -98,7 +98,7 @@ cd SleepLess
 - SleepLess lives in the **menu bar** — look for the small screen-with-a-sunrise icon. There is no Dock icon. **Click** the icon to turn SleepLess on or off; **press and hold** it for the settings panel; **right-click** (or ⌃-click) it for the quick menu. The panel shows this tip once.
 - It registers itself as a **login item** on first launch (macOS may show a "background items added" notification). Untick *Launch at login* in the panel if you would rather not.
 - Installed with the package, the helper behind lid-closed mode and the charging light is already set up — the installer's prompt was the one. Built from source, the panel opens with a **one-time setup** card instead: **Set up now** brings one macOS prompt — your password, or Touch ID on Macs that have it — and nothing asks again; **Later** leaves those two features off, each with its own *Set up…* button, until you are ready. (A *Reinstall helper…* link under *Safety* is there if the helper is ever removed.)
-- If you use a menu-bar organiser app, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there.
+- If you use a menu-bar organiser app, or your menu bar is crowded next to the notch, the icon may be hidden — look for it there, or open SleepLess again (from Applications or Spotlight) to get the panel. When the menu bar is full, the panel opens at the top right of the screen and says so.
 
 ## Usage
 

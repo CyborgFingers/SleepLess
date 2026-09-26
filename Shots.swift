@@ -25,16 +25,17 @@ import SwiftUI
         var readme = Settings(); readme.screenOn = true; readme.offAfter = 60; readme.offAt = Date().addingTimeInterval(52 * 60); readme.offFrom = Date().addingTimeInterval(-8 * 60)
         readme.timeInMenuBar = true; readme.appsOn = true; readme.apps = [call, slides]; readme.hotKey = more.hotKey
         let charging = Power.Battery(percent: 72, onAC: true)
-        let states: [(name: String, keeper: Keeper, tip: Bool, safety: Bool, automations: Bool, more: Bool)] = [
-            ("readme", Keeper(shots: readme, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, false, false),
-            ("setup", Keeper(shots: Settings(), battery: charging, helperReady: false), true, false, false, false),
-            ("off", Keeper(shots: Settings(), battery: charging, helperReady: true), false, false, false, false),
-            ("screen", Keeper(shots: screen, battery: charging, helperReady: true), false, false, false, false),
-            ("lid", Keeper(shots: lid, battery: charging, helperReady: true, lidActive: true), false, true, false, false),
-            ("automations", Keeper(shots: auto, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, true, false),
-            ("more", Keeper(shots: more, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, false, true),
+        let states: [(name: String, keeper: Keeper, tip: Bool, safety: Bool, automations: Bool, more: Bool, hidden: Bool)] = [
+            ("readme", Keeper(shots: readme, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, false, false, false),
+            ("setup", Keeper(shots: Settings(), battery: charging, helperReady: false), true, false, false, false, false),
+            ("off", Keeper(shots: Settings(), battery: charging, helperReady: true), false, false, false, false, false),
+            ("screen", Keeper(shots: screen, battery: charging, helperReady: true), false, false, false, false, false),
+            ("lid", Keeper(shots: lid, battery: charging, helperReady: true, lidActive: true), false, true, false, false, false),
+            ("automations", Keeper(shots: auto, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, true, false, false),
+            ("more", Keeper(shots: more, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, false, true, false),
+            ("hidden", Keeper(shots: Settings(), battery: charging, helperReady: true), false, false, false, false, true),   // the floating panel's note
             ("update", Keeper(shots: Settings(), battery: Power.Battery(percent: 18, onAC: false), helperReady: true,   // last: the sample offer stays
-                              note: "Lid-closed mode turned off: battery at 18%."), false, false, false, false),
+                              note: "Lid-closed mode turned off: battery at 18%."), false, false, false, false, false),
         ]
         let defaults = UserDefaults.standard
         let keys = ["tapHintSeen", "safetyExpanded", "automationsExpanded", "moreExpanded"]
@@ -46,7 +47,7 @@ import SwiftUI
             defaults.set(state.automations, forKey: "automationsExpanded")
             defaults.set(state.more, forKey: "moreExpanded")
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 1))   // the glyph's sunrise settles
-            for dark in [false, true] { write(Panel(keeper: state.keeper), as: "\(state.name)-\(dark ? "dark" : "light")", dark: dark, to: out) }
+            for dark in [false, true] { write(Panel(keeper: state.keeper, iconHidden: state.hidden), as: "\(state.name)-\(dark ? "dark" : "light")", dark: dark, to: out) }
         }
         for (key, value) in kept { defaults.set(value, forKey: key) }
         for dark in [false, true] { writeMenu(states[0].keeper, as: "menu-\(dark ? "dark" : "light")", dark: dark, to: out) }

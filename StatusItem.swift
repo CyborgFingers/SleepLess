@@ -4,7 +4,8 @@ import SwiftUI
 
 /// The menu-bar item. A click turns SleepLess on or off; press and hold opens the settings popover (closed by Esc,
 /// a click anywhere else, or another click on the icon); right-click / ⌃-click opens the quick menu (StatusMenu).
-/// While a timer runs, the time left can sit beside the icon.
+/// While a timer runs, the time left can sit beside the icon. Opening the app again shows the panel too — in a
+/// floating panel at the top right when a full menu bar has hidden the icon (under the notch, or off the edge).
 @MainActor final class StatusItemController {
     enum Gesture: Equatable { case tap, hold, menu }
     static let holdDelay: TimeInterval = 0.35
@@ -16,11 +17,23 @@ import SwiftUI
         return releasedInTime() ? .tap : .hold
     }
 
+    /// Whether the menu bar has hidden the icon, kept pure so --selftest can check it: a full menu bar pushes
+    /// status items under the camera notch or off the edge of the screen. `item` is the icon's window frame (nil
+    /// without one), `notch` the gap between the screen's two menu-bar strips (nil without a notch), `visible`
+    /// whether macOS reports the window on screen.
+    nonisolated static func iconHidden(item: CGRect?, screen: CGRect, notch: CGRect?, visible: Bool) -> Bool {
+        guard let item, visible else { return true }
+        if let notch, item.maxX > notch.minX, item.minX < notch.maxX { return true }
+        return item.minX < screen.minX || item.maxX > screen.maxX
+    }
+
     private let keeper: Keeper
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let host: NSHostingController<AnyView>
     private var menu: StatusMenu?
+    private var floating: NSPanel?       // the panel shown when the icon can't be reached
+    private var anchor: Any?             // keeps the floating panel's top-right corner put as it grows
     private var sinks: [AnyCancellable] = []
     private var monitors: [Any] = []
 
@@ -68,15 +81,62 @@ import SwiftUI
 
     /// Esc closes the popover (and is swallowed); a click in any window but the popover's or the icon's closes it.
     private func sawLocal(_ event: NSEvent) -> Bool {
-        guard popover.isShown else { return false }
+        guard popover.isShown || floating != nil else { return false }
         if event.type == .keyDown {
             guard event.keyCode == 53, !HotKeys.recording else { return false }   // Esc while recording a shortcut cancels that instead
             close()
             return true
         }
-        if ![host.view.window, item.button?.window].contains(where: { $0 === event.window }) { close() }
+        let own: [NSWindow?] = [host.view.window, item.button?.window, floating]
+        if !own.contains(where: { $0 === event.window }) { close() }
         return false
     }
+
+    /// The app was opened again (from Applications, Spotlight, `open -a`): the panel, one way or the other.
+    func reopen() {
+        guard !popover.isShown, floating == nil else { return }
+        if iconIsHidden { showFloating() } else { open() }
+    }
+
+    private var iconIsHidden: Bool {
+        guard let window = item.button?.window, let screen = window.screen ?? NSScreen.screens.first else { return true }
+        var notch: CGRect?
+        if let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea {
+            notch = CGRect(x: left.maxX, y: left.minY, width: right.minX - left.maxX, height: left.height)
+        }
+        return Self.iconHidden(item: window.frame, screen: screen.frame, notch: notch, visible: window.occlusionState.contains(.visible))
+    }
+
+    /// The same panel in a small floating window at the top right of the menu bar's screen, with a note about the
+    /// full menu bar. It takes key presses without activating the app, and Esc or a click anywhere else closes it.
+    private func showFloating() {
+        guard let screen = item.button?.window?.screen ?? NSScreen.screens.first else { return }
+        let card = AnyView(Self.panel(keeper, visible: true, iconHidden: true)
+            .background(Color(nsColor: .windowBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.12))))
+        let host = NSHostingController(rootView: card)
+        host.sizingOptions = .preferredContentSize
+        let panel = FloatingPanel(contentRect: NSRect(origin: .zero, size: host.view.fittingSize), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.contentViewController = host
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.level = .floating
+        panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = false
+        panel.isReleasedWhenClosed = false
+        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+        let corner = NSPoint(x: screen.visibleFrame.maxX - 12, y: screen.visibleFrame.maxY - 8)   // just under the menu bar
+        panel.setFrameOrigin(NSPoint(x: corner.x - panel.frame.width, y: corner.y - panel.frame.height))
+        anchor = NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: panel, queue: .main) { _ in
+            MainActor.assumeIsolated { panel.setFrameOrigin(NSPoint(x: corner.x - panel.frame.width, y: corner.y - panel.frame.height)) }
+        }
+        floating = panel
+        panel.makeKeyAndOrderFront(nil)
+    }
+
+    private final class FloatingPanel: NSPanel { override var canBecomeKey: Bool { true } }
 
     @objc private func clicked() {
         guard let event = NSApp.currentEvent else { return }
@@ -100,8 +160,8 @@ import SwiftUI
         button.performClick(nil)
     }
 
-    private static func panel(_ keeper: Keeper, visible: Bool) -> AnyView {
-        AnyView(Panel(keeper: keeper).environment(\.panelVisible, visible))
+    private static func panel(_ keeper: Keeper, visible: Bool, iconHidden: Bool = false) -> AnyView {
+        AnyView(Panel(keeper: keeper, iconHidden: iconHidden).environment(\.panelVisible, visible))
     }
 
     private func open() {
@@ -116,6 +176,12 @@ import SwiftUI
     }
 
     private func close() {
+        if let floating {
+            floating.orderOut(nil)
+            self.floating = nil
+            if let anchor { NotificationCenter.default.removeObserver(anchor) }
+            anchor = nil
+        }
         guard popover.isShown else { return }
         popover.close()
         host.rootView = Self.panel(keeper, visible: false)

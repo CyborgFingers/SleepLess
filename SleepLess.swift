@@ -46,6 +46,13 @@ import IOKit.pwr_mgt
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    /// Opened again (from Applications, Spotlight, `open -a`): show the panel — the way to it when a full menu bar
+    /// has hidden the icon.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        statusItem?.reopen()
+        return false
+    }
 }
 
 /// `SleepLess.app/Contents/MacOS/SleepLess --selftest` is side-effect-free: it reads (brightness, battery) and checks
@@ -73,9 +80,9 @@ private func selfTest() -> Never {
     precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .menu, "FAIL: control-click should open the menu")
 
     Updater.selfTest()   // versions, the release feed, signatures, the swap script on a fake bundle
-    SelfTest.features()  // settings migration, the timer clock, schedules, automations, the URL scheme, the shortcut
+    SelfTest.features()  // settings migration, the timer clock, schedules, automations, the URL scheme, the shortcut, the hidden-icon rule
 
-    print("PASS: brightness + battery readable, tap/hold logic, updater, settings migration, timer clock, schedules, automations, URL scheme, shortcut labels (SleepDisabled now \(Power.sleepDisabled))")
+    print("PASS: brightness + battery readable, tap/hold logic, updater, settings migration, timer clock, schedules, automations, URL scheme, shortcut labels, hidden-icon rule (SleepDisabled now \(Power.sleepDisabled))")
     exit(0)
 }
 
