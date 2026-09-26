@@ -70,7 +70,9 @@ enum KeyboardLight {
               let (_, s2, _, enableAuto) = method("enableAutoBrightness:forKeyboard:", (@convention(c) (AnyObject, Selector, Bool, UInt64) -> Void).self)
         else { return NSLog("SleepLess: keyboard backlight unavailable") }
         if !level.auto { enableAuto(c, s2, false, k) }   // off first, so ambient light can't pull it back up
-        if !setBrightness(c, s, level.brightness, k) { NSLog("SleepLess: keyboard backlight set failed") }
+        // A zero read while macOS had the light switched off (auto on, a bright room or idle) isn't a level to put back:
+        // writing it would make "off" the user's own setting, and the keys would stay dark in a dark room.
+        if !(level.auto && level.brightness == 0), !setBrightness(c, s, level.brightness, k) { NSLog("SleepLess: keyboard backlight set failed") }
         if level.auto { enableAuto(c, s2, true, k) }
     }
 }
