@@ -56,8 +56,8 @@ enum Automation {
         return out
     }
 
-    /// "While Zoom is running", "While Zoom is running and on the power adapter",
-    /// "While Zoom is running, on the power adapter and on the schedule".
+    /// "While FaceTime is running", "While FaceTime is running and on the power adapter",
+    /// "While FaceTime is running, on the power adapter and on the schedule".
     nonisolated static func sentence(_ reasons: [Reason], prefix: String = "While ") -> String {
         let phrases = reasons.map(\.phrase)
         switch phrases.count {
@@ -67,7 +67,7 @@ enum Automation {
         }
     }
 
-    /// What the collapsed section says: the rules that are on, e.g. "Zoom, Keynote · On power · Weekdays 9:00 AM – 5:00 PM".
+    /// What the collapsed section says: the rules that are on, e.g. "FaceTime, Keynote · On power · Weekdays 9:00 AM – 5:00 PM".
     static func summary(_ s: Settings) -> String {
         var parts: [String] = []
         if s.appsOn { parts.append(s.apps.isEmpty ? "No apps chosen" : s.apps.map(\.name).joined(separator: ", ")) }

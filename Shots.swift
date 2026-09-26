@@ -15,23 +15,23 @@ import SwiftUI
         if let m = class_getInstanceMethod(NSApplication.self, #selector(getter: NSApplication.isActive)) {
             method_setImplementation(m, imp_implementationWithBlock({ (_: AnyObject) -> Bool in true } as @convention(block) (AnyObject) -> Bool))
         }
-        let zoom = AppRef(id: "us.zoom.xos", name: "Zoom"), keynote = AppRef(id: "com.apple.iWork.Keynote", name: "Keynote")
+        let facetime = AppRef(id: "com.apple.FaceTime", name: "FaceTime"), keynote = AppRef(id: "com.apple.iWork.Keynote", name: "Keynote")
         var screen = Settings(); screen.screenOn = true; screen.dims = true
         var lid = Settings(); lid.lidOn = true; lid.offAfter = 60; lid.offAt = Date().addingTimeInterval(38 * 60); lid.offFrom = Date().addingTimeInterval(-22 * 60)
-        var auto = Settings(); auto.appsOn = true; auto.apps = [zoom, keynote]; auto.scheduleOn = true; auto.screenSleeps = true
+        var auto = Settings(); auto.appsOn = true; auto.apps = [facetime, keynote]; auto.scheduleOn = true; auto.screenSleeps = true
         var more = Settings(); more.screenOn = true; more.offAtMinute = 17 * 60 + 30; more.offAt = Clock.next(minute: 17 * 60 + 30, after: Date()); more.offFrom = Date()
-        more.timeInMenuBar = true; more.notify = true; more.hotKey = HotKey(keyCode: 1, modifiers: HotKey.carbon([.control, .option, .command]), key: "S"); more.appsOn = true; more.apps = [zoom]
+        more.timeInMenuBar = true; more.notify = true; more.hotKey = HotKey(keyCode: 1, modifiers: HotKey.carbon([.control, .option, .command]), key: "S"); more.appsOn = true; more.apps = [facetime]
         var readme = Settings(); readme.screenOn = true; readme.offAfter = 60; readme.offAt = Date().addingTimeInterval(52 * 60); readme.offFrom = Date().addingTimeInterval(-8 * 60)
-        readme.timeInMenuBar = true; readme.appsOn = true; readme.apps = [zoom, keynote]; readme.hotKey = more.hotKey
+        readme.timeInMenuBar = true; readme.appsOn = true; readme.apps = [facetime, keynote]; readme.hotKey = more.hotKey
         let charging = Power.Battery(percent: 72, onAC: true)
         let states: [(name: String, keeper: Keeper, tip: Bool, safety: Bool, automations: Bool, more: Bool)] = [
-            ("readme", Keeper(shots: readme, battery: charging, helperReady: true, reasons: [.app(zoom)]), false, false, false, false),
+            ("readme", Keeper(shots: readme, battery: charging, helperReady: true, reasons: [.app(facetime)]), false, false, false, false),
             ("setup", Keeper(shots: Settings(), battery: charging, helperReady: false), true, false, false, false),
             ("off", Keeper(shots: Settings(), battery: charging, helperReady: true), false, false, false, false),
             ("screen", Keeper(shots: screen, battery: charging, helperReady: true), false, false, false, false),
             ("lid", Keeper(shots: lid, battery: charging, helperReady: true, lidActive: true), false, true, false, false),
-            ("automations", Keeper(shots: auto, battery: charging, helperReady: true, reasons: [.app(zoom)]), false, false, true, false),
-            ("more", Keeper(shots: more, battery: charging, helperReady: true, reasons: [.app(zoom)]), false, false, false, true),
+            ("automations", Keeper(shots: auto, battery: charging, helperReady: true, reasons: [.app(facetime)]), false, false, true, false),
+            ("more", Keeper(shots: more, battery: charging, helperReady: true, reasons: [.app(facetime)]), false, false, false, true),
             ("update", Keeper(shots: Settings(), battery: Power.Battery(percent: 18, onAC: false), helperReady: true,   // last: the sample offer stays
                               note: "Lid-closed mode turned off: battery at 18%."), false, false, false, false),
         ]
@@ -57,38 +57,45 @@ import SwiftUI
     /// (a process may always capture its own windows), then dismissed.
     private static var menu: NSMenu?   // the one being captured (a static, so the timer's closure captures nothing)
 
+    /// The menu is translucent: the window server blurs and tints whatever is behind it, and a capture of the window
+    /// on its own is just the tint. So a plain window in the window-background colour goes underneath first, and the
+    /// shot is the screen area of the menu as composited — the menu over that window, the way it looks over any
+    /// ordinary window. (Without Screen Recording permission the capture holds this process's windows only.)
     private static func writeMenu(_ keeper: Keeper, as name: String, dark: Bool, to dir: URL) {
-        NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)!
+        NSApp.appearance = appearance
         let menu = StatusMenu(keeper: keeper, openSettings: {}, closed: {}).menu()
         Self.menu = menu
+        let top = NSScreen.main.map { NSPoint(x: $0.visibleFrame.minX + 24, y: $0.visibleFrame.maxY - 8) } ?? NSPoint(x: 24, y: 900)
+        let backdrop = ShotWindow(contentRect: NSRect(x: top.x - 40, y: top.y - 640, width: 760, height: 660), styleMask: .borderless, backing: .buffered, defer: false)
+        backdrop.appearance = appearance
+        appearance.performAsCurrentDrawingAppearance { backdrop.backgroundColor = .windowBackgroundColor }
+        backdrop.level = .floating
+        backdrop.orderFrontRegardless()
         let timer = Timer(timeInterval: 0.5, repeats: false) { _ in
             MainActor.assumeIsolated {
-                if let image = ownMenuWindowImage() {   // translucent: flattened onto the window background, like the panel shots
-                    let rect = NSRect(x: 0, y: 0, width: image.width, height: image.height)
-                    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: image.width, pixelsHigh: image.height, bitsPerSample: 8, samplesPerPixel: 4,
-                                               hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-                    NSGraphicsContext.saveGraphicsState()
-                    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-                    NSAppearance(named: dark ? .darkAqua : .aqua)!.performAsCurrentDrawingAppearance { NSColor.windowBackgroundColor.setFill(); rect.fill() }
-                    NSGraphicsContext.current?.cgContext.draw(image, in: rect)
-                    NSGraphicsContext.restoreGraphicsState()
-                    try! rep.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("\(name).png"))
+                if let image = ownMenuScreenImage() {
+                    try! NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("\(name).png"))
+                } else {
+                    NSLog("SleepLess --shots: the menu could not be captured")
                 }
                 Self.menu?.cancelTracking()
             }
         }
         RunLoop.main.add(timer, forMode: .common)   // fires inside the menu's tracking loop
-        let top = NSScreen.main.map { NSPoint(x: $0.visibleFrame.minX + 24, y: $0.visibleFrame.maxY - 8) } ?? NSPoint(x: 24, y: 900)
         menu.popUp(positioning: nil, at: top, in: nil)
+        backdrop.orderOut(nil)
         Self.menu = nil
     }
 
-    /// The image of this process's menu window (the only one at the menu level).
-    private static func ownMenuWindowImage() -> CGImage? {
+    /// The screen area of this process's menu window (the only one of its windows at the menu level), as composited.
+    private static func ownMenuScreenImage() -> CGImage? {
         let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
         let mine = windows.first { ($0[kCGWindowOwnerPID as String] as? Int32) == getpid() && ($0[kCGWindowLayer as String] as? Int) == Int(CGWindowLevelForKey(.popUpMenuWindow)) }
-        guard let id = mine?[kCGWindowNumber as String] as? UInt32 else { return nil }
-        return CGWindowListCreateImage(.null, .optionIncludingWindow, id, [.boundsIgnoreFraming, .bestResolution])
+        guard let id = mine?[kCGWindowNumber as String] as? Int, let window = NSApp.window(withWindowNumber: id), let primary = NSScreen.screens.first else { return nil }
+        let frame = window.frame   // AppKit's origin is the primary screen's bottom-left; the window server's is its top-left
+        let area = CGRect(x: frame.minX, y: primary.frame.maxY - frame.maxY, width: frame.width, height: frame.height)
+        return CGWindowListCreateImage(area, .optionOnScreenOnly, kCGNullWindowID, [.bestResolution])
     }
 
     /// Ordered in but off every display, and key: AppKit then draws the controls in their active look.

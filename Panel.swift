@@ -112,7 +112,7 @@ struct StatusHeader: View {
         return Date.now...offAt
     }
 
-    /// "Screen stays on · 1:12:05 left · while Zoom is running" — the countdown ticks by itself.
+    /// "Screen stays on · 1:12:05 left · while FaceTime is running" — the countdown ticks by itself.
     private var detail: Text {
         var text = Text(mode)
         if let countdown { text = text + Text(" · ") + Text(timerInterval: countdown, countsDown: true) + Text(" left") }
