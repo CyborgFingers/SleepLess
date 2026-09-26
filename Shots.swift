@@ -15,23 +15,24 @@ import SwiftUI
         if let m = class_getInstanceMethod(NSApplication.self, #selector(getter: NSApplication.isActive)) {
             method_setImplementation(m, imp_implementationWithBlock({ (_: AnyObject) -> Bool in true } as @convention(block) (AnyObject) -> Bool))
         }
-        let facetime = AppRef(id: "com.apple.FaceTime", name: "FaceTime"), keynote = AppRef(id: "com.apple.iWork.Keynote", name: "Keynote")
+        let call = SampleApp.call.ref, slides = SampleApp.slides.ref
+        AppRef.sampleIcon = SampleApp.icon   // the made-up apps get made-up icons (this process only)
         var screen = Settings(); screen.screenOn = true; screen.dims = true
         var lid = Settings(); lid.lidOn = true; lid.offAfter = 60; lid.offAt = Date().addingTimeInterval(38 * 60); lid.offFrom = Date().addingTimeInterval(-22 * 60)
-        var auto = Settings(); auto.appsOn = true; auto.apps = [facetime, keynote]; auto.scheduleOn = true; auto.screenSleeps = true
+        var auto = Settings(); auto.appsOn = true; auto.apps = [call, slides]; auto.scheduleOn = true; auto.screenSleeps = true
         var more = Settings(); more.screenOn = true; more.offAtMinute = 17 * 60 + 30; more.offAt = Clock.next(minute: 17 * 60 + 30, after: Date()); more.offFrom = Date()
-        more.timeInMenuBar = true; more.notify = true; more.hotKey = HotKey(keyCode: 1, modifiers: HotKey.carbon([.control, .option, .command]), key: "S"); more.appsOn = true; more.apps = [facetime]
+        more.timeInMenuBar = true; more.notify = true; more.hotKey = HotKey(keyCode: 1, modifiers: HotKey.carbon([.control, .option, .command]), key: "S"); more.appsOn = true; more.apps = [call]
         var readme = Settings(); readme.screenOn = true; readme.offAfter = 60; readme.offAt = Date().addingTimeInterval(52 * 60); readme.offFrom = Date().addingTimeInterval(-8 * 60)
-        readme.timeInMenuBar = true; readme.appsOn = true; readme.apps = [facetime, keynote]; readme.hotKey = more.hotKey
+        readme.timeInMenuBar = true; readme.appsOn = true; readme.apps = [call, slides]; readme.hotKey = more.hotKey
         let charging = Power.Battery(percent: 72, onAC: true)
         let states: [(name: String, keeper: Keeper, tip: Bool, safety: Bool, automations: Bool, more: Bool)] = [
-            ("readme", Keeper(shots: readme, battery: charging, helperReady: true, reasons: [.app(facetime)]), false, false, false, false),
+            ("readme", Keeper(shots: readme, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, false, false),
             ("setup", Keeper(shots: Settings(), battery: charging, helperReady: false), true, false, false, false),
             ("off", Keeper(shots: Settings(), battery: charging, helperReady: true), false, false, false, false),
             ("screen", Keeper(shots: screen, battery: charging, helperReady: true), false, false, false, false),
             ("lid", Keeper(shots: lid, battery: charging, helperReady: true, lidActive: true), false, true, false, false),
-            ("automations", Keeper(shots: auto, battery: charging, helperReady: true, reasons: [.app(facetime)]), false, false, true, false),
-            ("more", Keeper(shots: more, battery: charging, helperReady: true, reasons: [.app(facetime)]), false, false, false, true),
+            ("automations", Keeper(shots: auto, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, true, false),
+            ("more", Keeper(shots: more, battery: charging, helperReady: true, reasons: [.app(call)]), false, false, false, true),
             ("update", Keeper(shots: Settings(), battery: Power.Battery(percent: 18, onAC: false), helperReady: true,   // last: the sample offer stays
                               note: "Lid-closed mode turned off: battery at 18%."), false, false, false, false),
         ]
@@ -121,5 +122,27 @@ import SwiftUI
         host.cacheDisplay(in: host.bounds, to: rep)
         try! rep.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("\(name).png"))
         window.orderOut(nil)
+    }
+}
+
+/// The apps in the sample state: made up, so no real app is named, with icons drawn here (a symbol on a gradient tile).
+enum SampleApp: String, CaseIterable {
+    case call = "com.example.videocall", slides = "com.example.slides"
+
+    var ref: AppRef { AppRef(id: rawValue, name: self == .call ? "Video Call" : "Slides") }
+
+    static func icon(for id: String) -> NSImage? {
+        guard let app = SampleApp(rawValue: id) else { return nil }
+        let symbol = app == .call ? "video.fill" : "play.rectangle.fill"
+        let tint = app == .call ? NSColor.systemTeal : NSColor.systemOrange
+        return NSImage(size: NSSize(width: 64, height: 64), flipped: false) { rect in
+            let tile = NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14)
+            NSGradient(starting: tint.blended(withFraction: 0.3, of: .white) ?? tint, ending: tint)?.draw(in: tile, angle: -90)
+            let config = NSImage.SymbolConfiguration(pointSize: 30, weight: .semibold)
+            guard let glyph = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?.withSymbolConfiguration(config) else { return true }
+            let white = NSImage(size: glyph.size, flipped: false) { r in glyph.draw(in: r); NSColor.white.set(); r.fill(using: .sourceAtop); return true }
+            white.draw(in: NSRect(x: rect.midX - glyph.size.width / 2, y: rect.midY - glyph.size.height / 2, width: glyph.size.width, height: glyph.size.height))
+            return true
+        }
     }
 }

@@ -24,11 +24,14 @@ struct AppRef: Codable, Equatable, Hashable {
         self.init(id: id, name: name)
     }
 
-    /// Its icon from disk; a generic one if it isn't installed any more.
+    /// Its icon from disk; a generic one if it isn't installed any more. (`sampleIcon` is set by --shots alone, for
+    /// its made-up apps.)
     var icon: NSImage {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { NSWorkspace.shared.icon(forFile: $0.path) }
+        Self.sampleIcon?(id) ?? NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { NSWorkspace.shared.icon(forFile: $0.path) }
             ?? NSWorkspace.shared.icon(for: .applicationBundle)
     }
+
+    nonisolated(unsafe) static var sampleIcon: ((String) -> NSImage?)?
 }
 
 /// Why an automation is keeping the Mac awake, in the order the panel lists the rules.
@@ -56,8 +59,8 @@ enum Automation {
         return out
     }
 
-    /// "While FaceTime is running", "While FaceTime is running and on the power adapter",
-    /// "While FaceTime is running, on the power adapter and on the schedule".
+    /// "While Video Call is running", "While Video Call is running and on the power adapter",
+    /// "While Video Call is running, on the power adapter and on the schedule".
     nonisolated static func sentence(_ reasons: [Reason], prefix: String = "While ") -> String {
         let phrases = reasons.map(\.phrase)
         switch phrases.count {
@@ -67,7 +70,7 @@ enum Automation {
         }
     }
 
-    /// What the collapsed section says: the rules that are on, e.g. "FaceTime, Keynote · On power · Weekdays 9:00 AM – 5:00 PM".
+    /// What the collapsed section says: the rules that are on, e.g. "Video Call, Slides · On power · Weekdays 9:00 AM – 5:00 PM".
     static func summary(_ s: Settings) -> String {
         var parts: [String] = []
         if s.appsOn { parts.append(s.apps.isEmpty ? "No apps chosen" : s.apps.map(\.name).joined(separator: ", ")) }

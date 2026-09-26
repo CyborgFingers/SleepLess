@@ -192,12 +192,12 @@ struct MoreSection: View {
                               help: "macOS asks for permission when you turn this on. SleepLess sends nothing else.",
                               isOn: Binding(get: { keeper.s.notify }, set: { keeper.setNotify($0) }))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Shortcuts & scripts").font(.callout)
-                        Text("Open sleepless://on, off, toggle, on?minutes=30, on?until=17:30 or lid?on=1 from the Shortcuts app or a script.")
+                        Text("Scripting").font(.callout)
+                        Text("Open sleepless://on, off, toggle, on?minutes=30, on?until=17:30 or lid?on=1 from a shortcut, a script or a shell.")
                             .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .help("From the Shortcuts app (Open URLs), another app or a shell: open \"sleepless://on?minutes=30\". on turns SleepLess on — with a duration or until a time (24-hour clock) — off turns it off, toggle flips it, lid?on=1 or 0 switches lid-closed mode. Nothing else is accepted.")
+                    .help("From a shortcut (Open URLs), a script or a shell: open \"sleepless://on?minutes=30\". on turns SleepLess on — with a duration or until a time (24-hour clock) — off turns it off, toggle flips it, lid?on=1 or 0 switches lid-closed mode. Nothing else is accepted.")
                 }
                 .padding(.leading, 18)
                 .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))

@@ -155,7 +155,7 @@
       <div class="card"><div class="icon">🛡️</div><h3>Safety cut-offs</h3><p>Only while charging. Pause when running hot. Low-battery cutoff (default 20 %). Turn on when you plug in, off when you unplug. All under one <em>Safety</em> disclosure with a one-line summary.</p></div>
       <div class="card"><div class="icon">⏱️</div><h3>Turn off — after, or at a time</h3><p>15 min to 4 hours, or at a time you pick (tomorrow if it has passed). The status line counts down, a progress bar runs, and the time left can sit beside the menu-bar icon. Then everything turns off and normal sleep is back.</p></div>
       <div class="card"><div class="icon">👆</div><h3>Click, hold, right-click</h3><p>A quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on) or off. Press and hold for the settings panel. Right-click for the quick menu: 15 minutes to 4 hours, until a time, indefinitely.</p></div>
-      <div class="card"><div class="icon">⌨️</div><h3>Shortcut, Shortcuts, scripts</h3><p>Record a keyboard shortcut that works in any app — no Accessibility permission. Drive it from the Shortcuts app or a shell with <code>sleepless://on?minutes=30</code>, <code>on?until=17:30</code>, <code>off</code>, <code>toggle</code>. Optional notifications when a timer ends or a safety rule steps in.</p></div>
+      <div class="card"><div class="icon">⌨️</div><h3>Shortcut &amp; scripting</h3><p>Record a keyboard shortcut that works in any app — no Accessibility permission. Drive it from a shortcut, a script or a shell with <code>sleepless://on?minutes=30</code>, <code>on?until=17:30</code>, <code>off</code>, <code>toggle</code>. Optional notifications when a timer ends or a safety rule steps in.</p></div>
       <div class="card"><div class="icon">🐕</div><h3>Watchdog</h3><p>If the app crashes or hangs, the helper restores normal sleep within about two minutes; quitting normally restores it immediately. Your Mac can never get stuck unable to sleep.</p></div>
     </div>
   </div>
@@ -191,7 +191,7 @@
       <figure><div class="frame"><img src="assets/panel-light.png" width="688" height="1148" alt="SleepLess panel in light appearance"></div><figcaption>Light</figcaption></figure>
       <figure><div class="frame"><img src="assets/panel-dark.png" width="688" height="1148" alt="SleepLess panel in dark appearance"></div><figcaption>Dark</figcaption></figure>
       <figure><div class="frame"><img src="assets/automations-light.png" width="688" height="1600" alt="The Automations section of the panel, expanded, light appearance"></div><figcaption>Automations</figcaption></figure>
-      <figure><div class="frame" style="max-width: 464px; margin: 0 auto"><img src="assets/menu-light.png" width="928" height="640" alt="The right-click menu on the menu-bar icon: the current state, Turn On, Keep awake for 15 minutes to 4 hours, Until a time, Indefinitely, Settings and Quit"></div><figcaption>The quick menu (right-click)</figcaption></figure>
+      <figure><div class="frame" style="max-width: 468px; margin: 0 auto"><img src="assets/menu-light.png" width="936" height="640" alt="The right-click menu on the menu-bar icon: the current state, Turn On, Keep awake for 15 minutes to 4 hours, Until a time, Indefinitely, Settings and Quit"></div><figcaption>The quick menu (right-click)</figcaption></figure>
     </div>
   </div>
 </section>
@@ -206,7 +206,7 @@
       <li><strong>Continue</strong>, <strong>Agree</strong> to the licence, <strong>Install</strong>. macOS asks for your password or Touch ID once: SleepLess goes into Applications, its helper for lid-closed mode and the charging light is set up, and SleepLess opens in the menu bar. Nothing asks again — later updates arrive signed, from inside the app.</li>
     </ol>
     <h3 style="margin-top: 28px">Or build it from source</h3>
-    <p class="muted">A few seconds with Xcode or the Command Line Tools (<code>xcode-select --install</code>):</p>
+    <p class="muted">A few seconds with Apple's command-line developer tools (<code>xcode-select --install</code>):</p>
 <pre><code>git clone https://github.com/Weta-Technologies/SleepLess.git
 cd SleepLess
 ./build.sh install</code></pre>

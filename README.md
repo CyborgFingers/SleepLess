@@ -30,11 +30,11 @@
 - **Charging light off when closed** — in lid-closed mode, closing the lid switches the MagSafe connector's light off (handy in a dark bedroom); opening it gives the light back to macOS in the right colour. On by default; a switch under *Safety* turns it off.
 - **Safety cut-offs** for lid-closed mode, tucked under a *Safety* disclosure with a one-line summary — *Only while charging*, *Pause when running hot* (thermal state serious/critical), a *Low-battery cutoff* slider (default 20 %, 0 = never) and *Turn on when charging* (follows plug/unplug).
 - **Turn off** — never, in 15 min, 30 min, 1, 2 or 4 hours, or *at a time* you pick (today if it is still ahead, otherwise tomorrow — DST-safe). The status header counts down, a progress bar runs under the timer, and *Time left in the menu bar* puts the remaining time (1h 12m) beside the icon. When the timer ends everything you switched on turns off; automations keep their own hours.
-- **Automations** — keep the Mac awake by itself *while an app is running* (pick from the apps running now, or any app — a call, a presentation, a build, an export), *on the power adapter*, *with an external display*, or *on a schedule* (days of the week and a window; an end time earlier than the start runs overnight, 0:00 – 0:00 is all day). All off by default, collapsed behind a one-line summary that says which rule is holding right now, and the status header spells it out (*While FaceTime is running*). A click on the icon pauses an automation until its reason ends. Event-driven — app launches and quits, displays coming and going — no polling, no permissions.
+- **Automations** — keep the Mac awake by itself *while an app is running* (pick from the apps running now, or any app — a call, a presentation, a build, an export), *on the power adapter*, *with an external display*, or *on a schedule* (days of the week and a window; an end time earlier than the start runs overnight, 0:00 – 0:00 is all day). All off by default, collapsed behind a one-line summary that says which rule is holding right now, and the status header spells it out (*While Video Call is running*). A click on the icon pauses an automation until its reason ends. Event-driven — app launches and quits, displays coming and going — no polling, no permissions.
 - **One click on, one click off** — a quick click on the menu-bar icon turns SleepLess on (bringing back the modes you last had on; screen awake by default) or off. Press and hold the icon for the settings panel; right-click (or ⌃-click) it for the **quick menu**: what SleepLess is doing, Turn On/Off, *Keep awake for* 15 min – 4 hours / *Until a time…* / *Indefinitely*, Settings… and Quit.
 - **Keyboard shortcut** — record any ⌘, ⌃ or ⌥ combination (or a function key) and it does what a click on the icon does, from any app. A system hot key, so no Accessibility permission.
 - **Notifications** — optional: when a timer ends, or a safety rule turns lid-closed mode off. macOS asks for permission only when you turn it on.
-- **Shortcuts & scripts** — `open "sleepless://on?minutes=30"`, `sleepless://on?until=17:30`, `sleepless://on`, `sleepless://off`, `sleepless://toggle`, `sleepless://lid?on=1` — from the Shortcuts app (*Open URLs*), another app or a shell. Only those verbs and parameters are accepted; values are clamped and anything else is dropped.
+- **Scripting** — `open "sleepless://on?minutes=30"`, `sleepless://on?until=17:30`, `sleepless://on`, `sleepless://off`, `sleepless://toggle`, `sleepless://lid?on=1` — from a shortcut (*Open URLs*), a script or a shell. Only those verbs and parameters are accepted; values are clamped and anything else is dropped.
 - **Watchdog** — the helper treats a request older than 90 s (app quit, crashed or hung) as "off", so your Mac can never get stuck unable to sleep. Quitting the app restores normal sleep immediately.
 - **Animated menu-bar icon** — a screen with the app icon's sunrise inside. Off is a hollow sun resting on the bottom of the screen. Turn SleepLess on and the sun climbs in and five rays fan out one after another; they breathe slowly while it is on, and it all sets again when it turns off. In lid-closed mode the sun lifts to the middle of the screen as a full disc. It is a template image, so it matches light and dark menu bars; the animation pauses while your screens sleep, and under Reduce Motion it simply switches between still frames.
 - **Launch at login** (on by default after the first launch) and settings that persist — and survive updates: a new version never resets them.
@@ -48,7 +48,7 @@
 | <img src="assets/panel-light.png" alt="SleepLess panel, light appearance" width="344"> | <img src="assets/panel-dark.png" alt="SleepLess panel, dark appearance" width="344"> |
 | <img src="assets/automations-light.png" alt="The Automations section expanded, light appearance" width="344"> | <img src="assets/automations-dark.png" alt="The Automations section expanded, dark appearance" width="344"> |
 
-<p align="center"><img src="assets/menu-light.png" alt="The right-click menu on the menu-bar icon: the current state, Turn On, Keep awake for 15 minutes to 4 hours, Until a time, Indefinitely, Settings and Quit" width="464"><br><sub>Right-click (or ⌃-click) the icon for the quick menu.</sub></p>
+<p align="center"><img src="assets/menu-light.png" alt="The right-click menu on the menu-bar icon: the current state, Turn On, Keep awake for 15 minutes to 4 hours, Until a time, Indefinitely, Settings and Quit" width="468"><br><sub>Right-click (or ⌃-click) the icon for the quick menu.</sub></p>
 
 ## How it works
 
@@ -83,7 +83,7 @@ The app also reads the live `SleepDisabled` flag, so the panel shows whether lid
 
 ### Build from source
 
-You need Xcode or the Command Line Tools (`xcode-select --install`).
+You need Apple's command-line developer tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/Weta-Technologies/SleepLess.git
@@ -106,7 +106,7 @@ A **quick click** on the menu-bar icon turns SleepLess on or off: on brings back
 
 | Control | What it does |
 | --- | --- |
-| **Status header** | The big glyph and sentence say what SleepLess is doing right now — the mode, the time left, and which automation is holding (*Screen stays on · 1:12:05 left · while FaceTime is running*); its switch is the same on/off as a click on the menu-bar icon. |
+| **Status header** | The big glyph and sentence say what SleepLess is doing right now — the mode, the time left, and which automation is holding (*Screen stays on · 1:12:05 left · while Video Call is running*); its switch is the same on/off as a click on the menu-bar icon. |
 | **Keep awake** | The Mac will not idle-sleep while the lid is open; what the screen does is the next row. |
 | **When idle** — *Stay on* / *Dim* / *Sleep* (shown while the mode is on) | *Stay on*: the screen never dims or sleeps. *Dim*: pick the brightness (*Dim to*) and the idle delay (*After*); brightness returns on the first key press or mouse move. *Sleep*: the screen sleeps as usual, the Mac stays awake. |
 | **Keep awake with lid closed** | Sets `SleepDisabled` through the root helper. Closing the lid turns the screen and keyboard light down to off while the Mac keeps running, without locking. The subtitle shows the real state. |
@@ -116,8 +116,8 @@ A **quick click** on the menu-bar icon turns SleepLess on or off: on brings back
 | **Low-battery cutoff** | Turns lid-closed mode off when the battery reaches this level on battery power (default 20 %, 0 = never). |
 | **Turn on when charging** | Turns lid-closed mode on when you plug in and off when you unplug (after the helper has been installed once). A manual flip sticks until the next plug/unplug. |
 | **Turn off** | *Never*, *In 15 minutes* – *In 4 hours*, or *At a time* (a time picker appears; today if still ahead, else tomorrow): turns everything you switched on off, with the countdown in the status header and a progress bar. Picking again restarts the countdown. *Time left in the menu bar* shows the remaining time (1h 12m) beside the icon. |
-| **Automations** (disclosure, with a summary like *FaceTime, Keynote · Weekdays 9:00 AM – 5:00 PM*, or the rule holding right now) | *While an app is running* — a list of apps with an *Add app* menu of the apps running now (or *Other…* for any app). *On the power adapter*. *With an external display*. *On a schedule* — day buttons and *From* / *to* times (an end at or before the start runs overnight). Each row says when it is keeping the Mac awake, or paused by a click. |
-| **More** (disclosure) | *Keyboard shortcut* — click *Record shortcut*, press the keys (⌘, ⌃ or ⌥ plus a key, or a function key), Esc cancels, × removes it. *Notify me* — when a timer ends or a safety rule turns lid-closed mode off (macOS asks for permission then). *Shortcuts & scripts* — the `sleepless://` commands. |
+| **Automations** (disclosure, with a summary like *Video Call, Slides · Weekdays 9:00 AM – 5:00 PM*, or the rule holding right now) | *While an app is running* — a list of apps with an *Add app* menu of the apps running now (or *Other…* for any app). *On the power adapter*. *With an external display*. *On a schedule* — day buttons and *From* / *to* times (an end at or before the start runs overnight). Each row says when it is keeping the Mac awake, or paused by a click. |
+| **More** (disclosure) | *Keyboard shortcut* — click *Record shortcut*, press the keys (⌘, ⌃ or ⌥ plus a key, or a function key), Esc cancels, × removes it. *Notify me* — when a timer ends or a safety rule turns lid-closed mode off (macOS asks for permission then). *Scripting* — the `sleepless://` commands. |
 | **Launch at login** / **Quit** | Quitting releases the assertions, restores brightness and tells the helper to restore normal sleep straight away. |
 
 Every control has a tooltip, everything works with the keyboard and VoiceOver, and the panel respects Reduce Motion (no shimmer, no transitions) and Increase Contrast.

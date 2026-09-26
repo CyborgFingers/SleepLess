@@ -56,7 +56,7 @@ enum SelfTest {
         check(broken.offAfter == 30, "the good keys beside it are kept")
         check(broken.apps.isEmpty, "a wrong-typed array counts as missing")
         var full = fresh
-        full.apps = [AppRef(id: "com.apple.FaceTime", name: "FaceTime")]
+        full.apps = [AppRef(id: "com.example.videocall", name: "Video Call")]
         full.hotKey = HotKey(keyCode: 1, modifiers: 4352, key: "S")
         full.offAtMinute = 17 * 60 + 30
         full.offFrom = Date(timeIntervalSinceReferenceDate: 1)
@@ -141,11 +141,11 @@ enum SelfTest {
     private static func automations() {
         let cal = auckland
         var s = Settings()
-        let facetime = AppRef(id: "com.apple.FaceTime", name: "FaceTime"), keynote = AppRef(id: "com.apple.iWork.Keynote", name: "Keynote")
-        s.apps = [facetime, keynote]
+        let call = AppRef(id: "com.example.videocall", name: "Video Call"), slides = AppRef(id: "com.example.slides", name: "Slides")
+        s.apps = [call, slides]
         let friday = date(2026, 9, 25, 10, 0, in: cal)
         let saturday = date(2026, 9, 26, 10, 0, in: cal)
-        let running: Set<String> = ["com.apple.FaceTime", "com.apple.finder"]
+        let running: Set<String> = ["com.example.videocall", "com.example.other"]
         let none = Automation.reasons(s, running: running, onAC: true, externalDisplay: true, now: friday, calendar: cal)
         check(none.isEmpty, "nothing on, no reasons")
         s.appsOn = true
@@ -153,15 +153,15 @@ enum SelfTest {
         s.displayOn = true
         s.scheduleOn = true
         let all = Automation.reasons(s, running: running, onAC: true, externalDisplay: true, now: friday, calendar: cal)
-        check(all == [.app(facetime), .power, .display, .schedule], "overlapping reasons in order: \(all)")
-        check(Automation.sentence(all) == "While FaceTime is running, on the power adapter, a display is connected and on the schedule", "four reasons: \(Automation.sentence(all))")
+        check(all == [.app(call), .power, .display, .schedule], "overlapping reasons in order: \(all)")
+        check(Automation.sentence(all) == "While Video Call is running, on the power adapter, a display is connected and on the schedule", "four reasons: \(Automation.sentence(all))")
         check(Automation.sentence([.power]) == "While on the power adapter", "one reason")
-        check(Automation.sentence([.app(keynote), .power]) == "While Keynote is running and on the power adapter", "two reasons")
+        check(Automation.sentence([.app(slides), .power]) == "While Slides is running and on the power adapter", "two reasons")
         check(Automation.sentence([]) == "", "no reasons")
-        let some = Automation.reasons(s, running: ["com.apple.iWork.Keynote"], onAC: false, externalDisplay: false, now: saturday, calendar: cal)
-        check(some == [.app(keynote)], "only Keynote holds on a Saturday on battery: \(some)")
-        let both = Automation.reasons(s, running: ["com.apple.FaceTime", "com.apple.iWork.Keynote"], onAC: false, externalDisplay: false, now: saturday, calendar: cal)
-        check(both == [.app(facetime), .app(keynote)], "two apps, both listed")
+        let some = Automation.reasons(s, running: ["com.example.slides"], onAC: false, externalDisplay: false, now: saturday, calendar: cal)
+        check(some == [.app(slides)], "only Slides holds on a Saturday on battery: \(some)")
+        let both = Automation.reasons(s, running: ["com.example.videocall", "com.example.slides"], onAC: false, externalDisplay: false, now: saturday, calendar: cal)
+        check(both == [.app(call), .app(slides)], "two apps, both listed")
         s.appsOn = false
         let battery = Automation.reasons(s, running: running, onAC: false, externalDisplay: false, now: friday, calendar: cal)
         check(!battery.contains(.power), "on battery is not on power")
