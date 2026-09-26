@@ -76,9 +76,12 @@ enum KeyboardLight {
 }
 
 enum Awake {
-    /// Same pair as `caffeinate -di`: screen never idle-dims/sleeps, system never idle-sleeps.
-    static func hold() -> [IOPMAssertionID] {
-        [kIOPMAssertionTypePreventUserIdleDisplaySleep, kIOPMAssertionTypePreventUserIdleSystemSleep].compactMap { type in
+    /// Same pair as `caffeinate -di`: screen never idle-dims/sleeps, system never idle-sleeps — or the system
+    /// half alone (`caffeinate -i`) when the screen may sleep.
+    static func hold(display: Bool = true) -> [IOPMAssertionID] {
+        let types = display ? [kIOPMAssertionTypePreventUserIdleDisplaySleep, kIOPMAssertionTypePreventUserIdleSystemSleep]
+                            : [kIOPMAssertionTypePreventUserIdleSystemSleep]
+        return types.compactMap { type in
             var id: IOPMAssertionID = 0
             let rc = IOPMAssertionCreateWithName(type as CFString, IOPMAssertionLevel(kIOPMAssertionLevelOn),
                                                  "SleepLess: keeping the screen awake" as CFString, &id)

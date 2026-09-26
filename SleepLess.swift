@@ -1,9 +1,10 @@
 import SwiftUI
 import IOKit.pwr_mgt
 
-// SleepLess — keep the screen on (optionally dimmed) and/or keep the Mac awake with the lid closed, with
-// safety cut-offs, an auto-off timer and launch at login.
-// The menu-bar item lives in StatusItem.swift, the panel UI in Panel.swift / PanelSections.swift.
+// SleepLess — keep the Mac awake with the lid open (screen on, dimmed, or allowed to sleep) and/or with the lid
+// closed, with safety cut-offs, a timer, automations, a keyboard shortcut and a URL scheme; launch at login.
+// The menu-bar item lives in StatusItem.swift (its right-click menu in StatusMenu.swift), the panel UI in
+// Panel.swift / PanelSections.swift / PanelExtras.swift, the reconcile loop in Keeper.swift.
 
 @main struct SleepLessApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
@@ -19,12 +20,20 @@ import IOKit.pwr_mgt
 }
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var keeper: Keeper?
     private var statusItem: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if Updater.shared.testRun { return Updater.shared.start() }   // --update-test: only the updater, on a copy of the app
-        statusItem = StatusItemController(keeper: Keeper())
+        let keeper = Keeper()
+        self.keeper = keeper
+        statusItem = StatusItemController(keeper: keeper)
         Updater.shared.start()
+    }
+
+    /// sleepless://on?minutes=30 and friends (Info.plist registers the scheme); anything Command.parse refuses is dropped.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for command in urls.compactMap(Command.parse) { keeper?.handle(command) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
@@ -73,8 +82,13 @@ private func selfTest() -> Never {
     precondition(StatusItemController.gesture(.rightMouseDown, control: false) { true } == .settings, "FAIL: right-click should open settings")
     precondition(StatusItemController.gesture(.leftMouseDown, control: true) { true } == .settings, "FAIL: control-click should open settings")
 
-    Updater.selfTest()   // versions, the release feed, signatures, the swap script on a fake bundle
+    let systemOnly = Awake.hold(display: false)   // "screen may sleep": the system half alone
+    precondition(systemOnly.count == 1, "FAIL: system-only assertion")
+    systemOnly.forEach { IOPMAssertionRelease($0) }
 
-    print("PASS: brightness + keyboard-light round-trips, display/system sleep assertions, battery, tap/hold logic, updater (SleepDisabled now \(Power.sleepDisabled))")
+    Updater.selfTest()   // versions, the release feed, signatures, the swap script on a fake bundle
+    SelfTest.features()  // settings migration, the timer clock, schedules, automations, the URL scheme, the shortcut
+
+    print("PASS: brightness + keyboard-light round-trips, display/system sleep assertions, battery, tap/hold logic, updater, settings migration, timer clock, schedules, automations, URL scheme (SleepDisabled now \(Power.sleepDisabled))")
     exit(0)
 }
