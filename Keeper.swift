@@ -87,6 +87,16 @@ struct LidDark: Codable, Equatable {
         tick()
     }
 
+    /// --shots: sample state for the panel — no timer, no tick, nothing on the Mac touched.
+    init(shots s: Settings, battery: Power.Battery?, helperReady: Bool, lidActive: Bool = false, note: String? = nil) {
+        self.s = s
+        self.battery = battery
+        self.helperReady = helperReady
+        self.lidActive = lidActive
+        self.note = note
+        icon.show(screen: s.screenOn, lid: s.lidOn)
+    }
+
     // MARK: User actions that need more than a plain binding
 
     /// The one administrator prompt (password or Touch ID): the setup card, a Set up… button, or Reinstall helper.
